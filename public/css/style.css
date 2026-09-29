@@ -1,0 +1,14 @@
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tahoma', sans-serif; }
+body { background-color: #f8f9fa; color: #333; }
+.navbar { background-color: #8b0000; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+.container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+.card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; }
+.form-group input { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
+.btn-primary { background: #007bff; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; }
+.btn-success { background: #28a745; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; }
+.error-msg { color: red; margin-top: 0.5rem; }
+.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.staff-grid, .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+#role-badge { background: #ffc107; color: black; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: bold; }

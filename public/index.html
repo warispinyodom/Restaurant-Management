@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการร้านอาหารอิตาลี</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="navbar">
+        <h1>🇮🇹 Italian Restaurant POS</h1>
+        <div id="user-info">
+            <span id="role-badge">Guest</span>
+            <button id="logout-btn" onclick="logout()" style="display:none;">ออกจากระบบ</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 1. หน้า Login -->
+        <section id="login-section" class="view-section active">
+            <h2>เข้าสู่ระบบ</h2>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+            <p id="login-error" class="error-msg"></p>
+        </section>
+
+        <!-- 2. หน้า Customer -->
+        <section id="customer-section" class="view-section" style="display:none;">
+            <h2>เมนูอาหาร (สำหรับลูกค้า)</h2>
+            <div id="customer-menu-list" class="grid-container"></div>
+        </section>
+
+        <!-- 3. หน้า Staff -->
+        <section id="staff-section" class="view-section" style="display:none;">
+            <h2>ระบบจัดการหน้าร้าน & ครัว</h2>
+            <div class="staff-grid">
+                <div class="card">
+                    <h3>จัดการโต๊ะ</h3>
+                    <div id="table-list"></div>
+                </div>
+                <div class="card">
+                    <h3>หน้าจอครัว (Kitchen Display)</h3>
+                    <div id="kitchen-orders"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. หน้า Admin -->
+        <section id="admin-section" class="view-section" style="display:none;">
+            <h2>แผงควบคุมผู้จัดการ (Admin Dashboard)</h2>
+            <div class="admin-grid">
+                <div class="card">
+                    <h3>เพิ่มเมนูอาหาร</h3>
+                    <form onsubmit="handleAddMenu(event)">
+                        <input type="text" id="menu-name" placeholder="ชื่อเมนู" required>
+                        <input type="number" id="menu-price" step="0.5" placeholder="ราคา" required>
+                        <input type="text" id="menu-cat" placeholder="หมวดหมู่" required>
+                        <button type="submit" class="btn-success">บันทึกเมนู</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3>Audit Logs (ประวัติการใช้งาน)</h3>
+                    <ul id="log-list"></ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
