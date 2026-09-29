@@ -1,40 +1,39 @@
 import requests
-import json
 
-# URL จากที่คุณกำหนดมา
-FIREBASE_URL = "https://webapplication-e7922-default-rtdb.asia-southeast1.firebasedatabase.app"
+# ⚠️ อย่าลืมเปลี่ยน URL นี้ให้ตรงกับ Realtime Database ของคุณใน Firebase Console
+FIREBASE_URL = "https://your-project-id-default-rtdb.firebaseio.com"
 
-def get_data(path: str) -> dict:
-    """ดึงข้อมูลจาก Firebase"""
+def get_data(node):
     try:
-        response = requests.get(f"{FIREBASE_URL}/{path}.json")
-        response.raise_for_status()
-        data = response.json()
-        return data if data else {}
-    except requests.exceptions.RequestException:
-        return {} # ซ่อน Traceback ไม่ให้ผู้ใช้เห็น
+        response = requests.get(f"{FIREBASE_URL}/{node}.json", timeout=5)
+        if response.status_code == 200:
+            res = response.json()
+            return res if isinstance(res, dict) else {}
+        return {}
+    except Exception as e:
+        print(f"[Firebase Get Error]: {e}")
+        return {}
 
-def post_data(path: str, data: dict) -> str:
-    """เพิ่มข้อมูลใหม่ (สร้าง ID อัตโนมัติ)"""
+def post_data(node, data):
     try:
-        response = requests.post(f"{FIREBASE_URL}/{path}.json", json=data)
-        response.raise_for_status()
-        return response.json().get("name", "")
-    except requests.exceptions.RequestException:
-        return ""
+        response = requests.post(f"{FIREBASE_URL}/{node}.json", json=data, timeout=5)
+        return response.json() if response.status_code == 200 else None
+    except Exception as e:
+        print(f"[Firebase Post Error]: {e}")
+        return None
 
-def put_data(path: str, data: dict) -> bool:
-    """อัปเดตข้อมูลแบบเจาะจง"""
+def patch_data(node, data):
     try:
-        response = requests.put(f"{FIREBASE_URL}/{path}.json", json=data)
+        response = requests.patch(f"{FIREBASE_URL}/{node}.json", json=data, timeout=5)
+        return response.json() if response.status_code == 200 else None
+    except Exception as e:
+        print(f"[Firebase Patch Error]: {e}")
+        return None
+
+def delete_data(node):
+    try:
+        response = requests.delete(f"{FIREBASE_URL}/{node}.json", timeout=5)
         return response.status_code == 200
-    except requests.exceptions.RequestException:
-        return False
-
-def delete_data(path: str) -> bool:
-    """ลบข้อมูล"""
-    try:
-        response = requests.delete(f"{FIREBASE_URL}/{path}.json")
-        return response.status_code == 200
-    except requests.exceptions.RequestException:
+    except Exception as e:
+        print(f"[Firebase Delete Error]: {e}")
         return False

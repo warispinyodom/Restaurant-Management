@@ -11,7 +11,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
-            <a class="navbar-anchor navbar-brand fw-bold" href="#">🍜 Restaurant Management</a>
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">🍜 Restaurant App</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -19,11 +19,11 @@
                 <ul class="navbar-nav me-auto">
                     {% if session.get('role') in ['admin', 'staff'] %}
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-chart-line"></i> แดชบอร์ด</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('kitchen_display') }}"><i class="fas fa-utensils"></i> หน้าจอครัว (KDS)</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('kitchen_display') }}"><i class="fas fa-utensils"></i> หน้าจอครัว</a></li>
                     {% endif %}
                     
                     {% if session.get('role') == 'admin' %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_manage_menus') }}"><i class="fas fa-tasks"></i> จัดการเมนู (Admin)</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_manage_menus') }}"><i class="fas fa-tasks"></i> จัดการเมนู</a></li>
                     {% endif %}
 
                     {% if session.get('role') %}
@@ -35,8 +35,8 @@
                     {% if session.get('username') %}
                         <li class="nav-item">
                             <span class="nav-link text-info">
-                                <i class="fas fa-user-circle"></i> {{ session.get('name') }} 
-                                <span class="badge bg-secondary">{{ session.get('role').upper() }}</span>
+                                <i class="fas fa-user-circle"></i> {{ session.get('name', '') }} 
+                                <span class="badge bg-secondary">{{ (session.get('role') or '').upper() }}</span>
                             </span>
                         </li>
                         <li class="nav-item"><a class="btn btn-outline-danger btn-sm my-auto ms-2" href="{{ url_for('logout') }}">ออกจากระบบ</a></li>
@@ -51,7 +51,6 @@
 
     <!-- Content Container -->
     <div class="container">
-        <!-- Display Flash Messages (Validation Alert) -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
