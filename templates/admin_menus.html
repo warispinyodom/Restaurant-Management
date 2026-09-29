@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <!-- Form เพิ่มเมนู -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white fw-bold"><i class="fas fa-plus-circle"></i> เพิ่มเมนูอาหารใหม่</div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_manage_menus') }}">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อเมนูอาหาร*</label>
+                        <input type="text" name="name" class="form-control" required placeholder="เช่น ผัดไทยกุ้งสด">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ราคา (บาท)*</label>
+                        <input type="text" name="price" class="form-control" required placeholder="ตัวอย่าง 60 หรือ 60.00">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">หมวดหมู่*</label>
+                        <input type="text" name="category" class="form-control" required placeholder="เช่น อาหารจานเดียว, ทานเล่น">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">บันทึกเมนู</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ตารางแสดงรายการเมนู -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white fw-bold"><i class="fas fa-list"></i> รายการเมนูทั้งหมด (CRUD)</div>
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ชื่อเมนู</th>
+                            <th>หมวดหมู่</th>
+                            <th>ราคา</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mid, item in menus.items() %}
+                        <tr>
+                            <td class="fw-bold">{{ item.name }}</td>
+                            <td><span class="badge bg-secondary">{{ item.category }}</span></td>
+                            <td>{{ "%.2f"|format(item.price) }} ฿</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin_delete_menu', menu_id=mid) }}" onsubmit="return confirm('ยืนยันการลบเมนูนีหรือไม่?');" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> ลบ</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center py-4 text-muted">ยังไม่มีรายการเมนู</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

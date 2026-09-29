@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark text-center py-3">
+                <h4 class="mb-0"><i class="fas fa-user-plus"></i> สมัครสมาชิก (Customer)</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('register') }}">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อผู้ใช้ (Username)*</label>
+                        <input type="text" name="username" class="form-control" required placeholder="อย่างน้อย 4 ตัวอักษร">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อ-นามสกุล*</label>
+                        <input type="text" name="name" class="form-control" required placeholder="นายสมชาย ใจดี">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">เบอร์โทรศัพท์</label>
+                        <input type="text" name="phone" class="form-control" placeholder="08XXXXXXXX">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">รหัสผ่าน (Password)*</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ยืนยันรหัสผ่าน*</label>
+                        <input type="password" name="confirm_password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100 fw-bold">ลงทะเบียนสมาชิก</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
