@@ -1,4 +1,34 @@
 // เพิ่มการส่งออเดอร์จริงเข้าสู่ระบบ
+async function loginUser(username, password) {
+    const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+    });
+    
+    const data = await response.json();
+    if (data.status === 'success') {
+        alert(data.message);
+        localStorage.setItem('userRole', data.role); // เก็บสิทธิ์การเข้าใช้งาน
+        window.location.href = '/dashboard.html'; // ไปหน้าถัดไป
+    } else {
+        alert("เข้าสู่ระบบล้มเหลว: " + data.message);
+    }
+}
+async function registerUser(username, password, role="guest") {
+    const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password, role: role })
+    });
+    
+    const data = await response.json();
+    if (data.status === 'success') {
+        alert("สมัครสมาชิกสำเร็จ! กรุณาล็อคอิน");
+    } else {
+        alert("สมัครสมาชิกล้มเหลว: " + data.message);
+    }
+}
 async function submitOrder() {
     if (currentCart.length === 0) {
         alert("กรุณาเลือกรายการอาหารก่อนสั่ง");
