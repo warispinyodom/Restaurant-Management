@@ -1,7 +1,7 @@
 import requests
 
 # ⚠️ อย่าลืมเปลี่ยน URL นี้ให้ตรงกับ Realtime Database ของคุณใน Firebase Console
-FIREBASE_URL = "https://your-project-id-default-rtdb.firebaseio.com"
+FIREBASE_URL = "https://webapplication-e7922-default-rtdb.asia-southeast1.firebasedatabase.app/"
 
 def get_data(node):
     try:
