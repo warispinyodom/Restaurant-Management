@@ -31,6 +31,26 @@ def login():
         flash("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", "error")
     return render_template('login.html')
 
+# ==========================================
+# เพิ่ม Route หน้าหลัก ( Redirect ไป Login หรือ Menu )
+# ==========================================
+@app.route('/')
+def index():
+    # ถ้าล็อกอินแล้ว ให้พาไปตามสิทธิ์ ถ้ายังไม่ล็อกอิน ให้ไปหน้า Login
+    if 'role' in session:
+        if session['role'] in ('admin', 'staff'):
+            return redirect(url_for('dashboard'))
+        return redirect(url_for('customer_menu'))
+    return redirect(url_for('login'))
+
+# ==========================================
+# ดักจับ Favicon ป้องกัน Error
+# ==========================================
+@app.route('/favicon.ico')
+@app.route('/favicon.png')
+def favicon():
+    return '', 204  # ส่งค่าว่าง (No Content) ป้องกัน Error 404/500
+
 @app.route('/logout')
 def logout():
     session.clear()
@@ -97,7 +117,7 @@ def manage_menus():
     return render_template('menus.html', menus=paged_result)
 
 # ==========================================
-# 4. ระบบ Error Handling กลาง (ไม่แสดง Traceback)
+# 4. ระบบ Error Handling กลาง (ไม่แสดง Traceback )
 # ==========================================
 @app.errorhandler(500)
 def internal_server_error(e):
