@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1">ช่องทางชำระเงิน</h3>
+        <p class="text-muted mb-0 small">ตั้งค่า QR Code พร้อมเพย์และบัญชีธนาคารสำหรับโอนชำระเงิน</p>
+    </div>
+    <button class="btn btn-primary shadow-sm px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+        <i class="fas fa-qrcode me-1"></i> เพิ่มช่องทางชำระเงิน
+    </button>
+</div>
+
+<div class="row g-3">
+    {% for payment in payments %}
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="bg-light text-center p-3 border-bottom">
+                <img src="{{ url_for('static', filename='uploads/' + payment.qr_image) }}" class="img-fluid rounded border bg-white p-2 shadow-sm" style="max-height: 220px; object-fit: contain;" alt="QR Code">
+            </div>
+            <div class="card-body d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="fw-bold text-dark mb-0">{{ payment.bank_name }}</h5>
+                        {% if payment.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success">เปิดใช้งาน</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary">ปิดใช้งาน</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted small mb-1">
+                        <i class="fas fa-user me-1"></i> <strong>ชื่อบัญชี:</strong> {{ payment.account_name }}
+                    </p>
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-credit-card me-1"></i> <strong>เลขบัญชี/พร้อมเพย์:</strong> <span class="font-monospace fw-bold text-dark">{{ payment.promptpay_no }}</span>
+                    </p>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm w-100 rounded-2 d-inline-flex align-items-center justify-content-center fw-semibold" onclick="deleteItem('/admin/payments/delete/{{ payment.id }}')">
+                    <i class="fas fa-trash-can me-1"></i> ลบช่องทางนี้
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% if not payments %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm text-center py-5 text-muted">
+            <i class="fas fa-qrcode fa-3x mb-3 text-secondary opacity-50"></i>
+            <p class="mb-0">ยังไม่มีช่องทางชำระเงินในระบบ</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ url_for('admin_payments_add') }}" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">เพิ่มช่องทางชำระเงิน</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">ธนาคาร / บริการ</label>
+                    <input type="text" name="bank_name" class="form-control" placeholder="เช่น กสิกรไทย, พร้อมเพย์" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">ชื่อบัญชี</label>
+                    <input type="text" name="account_name" class="form-control" placeholder="เช่น นายสมชาย ใจดี" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">เลขบัญชี / เบอร์พร้อมเพย์</label>
+                    <input type="text" name="promptpay_no" class="form-control" placeholder="เช่น 0812345678" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">รูปภาพ QR Code</label>
+                    <input type="file" name="qr_image" class="form-control" accept="image/*" required>
+                </div>
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
+                    <label class="form-check-label small fw-bold" for="isActive">เปิดใช้งานช่องทางนี้ทันที</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary px-4">บันทึกช่องทาง</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteItem(url) {
+    if(confirm('ต้องการลบช่องทางชำระเงินนี้ใช่หรือไม่?')) {
+        fetch(url, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') location.reload();
+            else alert('Error: ' + data.message);
+        });
+    }
+}
+</script>
+{% endblock %}

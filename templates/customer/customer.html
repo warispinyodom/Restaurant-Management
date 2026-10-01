@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row g-4">
+
+        <!-- ซ้าย: แสดงรายการเมนูอาหาร -->
+        <div class="col-lg-8">
+            <h4 class="fw-bold mb-3"><i class="fas fa-utensils text-primary me-2"></i> สั่งอาหาร (Menu)</h4>
+
+            <div class="row g-3">
+                {% if menus %}
+                {% for menu in menus %}
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden position-relative">
+                        <!-- รูปภาพเมนู -->
+                        {% if menu['image_file'] %}
+                        <img src="{{ url_for('static', filename='uploads/' + menu['image_file']) }}"
+                            class="card-img-top" alt="{{ menu['name'] }}" style="height: 160px; object-fit: cover;">
+                        {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted"
+                            style="height: 160px;">
+                            <i class="fas fa-image fs-1 opacity-25"></i>
+                        </div>
+                        {% endif %}
+
+                        <div class="card-body p-3 d-flex flex-column">
+                            <h6 class="fw-bold text-dark mb-1">{{ menu['name'] }}</h6>
+                            <div class="text-muted small mb-2">หมวดหมู่: {{ menu['category'] }}</div>
+
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="fw-bold fs-5 text-primary">฿{{ "{:,.0f}".format(menu['price']) }}</span>
+                                <button class="btn btn-primary btn-sm rounded-circle shadow-sm"
+                                    data-id="{{ menu['id'] }}" data-name="{{ menu['name'] }}"
+                                    data-price="{{ menu['price'] }}"
+                                    onclick="addToCart(this.dataset.id, this.dataset.name, parseFloat(this.dataset.price))"
+                                    style="width: 35px; height: 35px;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="col-12 text-center py-5">
+                    <h5 class="text-muted">ยังไม่มีรายการอาหารที่พร้อมขายในขณะนี้</h5>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ขวา: ตะกร้าสินค้าและสรุปยอด (Cart) -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 sticky-top" style="top: 20px;">
+                <div class="card-header bg-white py-3 border-bottom border-light">
+                    <h5 class="fw-bold m-0"><i class="fas fa-shopping-cart text-warning me-2"></i> รายการสั่งซื้อของคุณ
+                    </h5>
+                </div>
+
+                <div class="card-body p-0">
+                    <!-- รายการสินค้าที่เลือก -->
+                    <ul class="list-group list-group-flush" id="cart-items"
+                        style="max-height: 400px; overflow-y: auto;">
+                        <li class="list-group-item text-center text-muted py-4" id="empty-cart-msg">
+                            <i class="fas fa-basket-shopping fs-2 opacity-25 mb-2 d-block"></i>
+                            ตะกร้าว่างเปล่า
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-footer bg-white border-top border-light p-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">จำนวนโต๊ะ / ลูกค้า</span>
+                        <input type="number" id="customer-count" class="form-control form-control-sm w-25 text-center"
+                            value="1" min="1">
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-bold text-dark fs-5">ยอดรวมทั้งหมด</span>
+                        <span class="fw-bold text-primary fs-5" id="cart-total">฿0.00</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">ช่องทางการชำระเงิน</label>
+                        <select class="form-select form-select-sm" id="payment-method">
+                            <option value="เงินสด">เงินสด</option>
+                            {% for payment in payments %}
+                            <option value="{{ payment['bank_name'] }} - {{ payment['account_name'] }}">โอนเงิน ({{
+                                payment['bank_name'] }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button class="btn btn-success w-100 fw-bold py-2 shadow-sm" id="btn-checkout" onclick="checkout()"
+                        disabled>
+                        ยืนยันการสั่งซื้อ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let cart = [];
+
+    // เพิ่มสินค้าลงตะกร้า
+    function addToCart(id, name, price) {
+        const existingItem = cart.find(item => item.id === id);
+        if (existingItem) {
+            existingItem.qty += 1;
+        } else {
+            cart.push({ id: id, name: name, price: price, qty: 1 });
+        }
+        updateCartUI();
+    }
+
+    // ลดจำนวนสินค้า
+    function decreaseQty(id) {
+        const itemIndex = cart.findIndex(item => item.id === id);
+        if (itemIndex !== -1) {
+            cart[itemIndex].qty -= 1;
+            if (cart[itemIndex].qty <= 0) {
+                cart.splice(itemIndex, 1);
+            }
+        }
+        updateCartUI();
+    }
+
+    // อัปเดตหน้าตาตะกร้า
+    function updateCartUI() {
+        const cartItemsContainer = document.getElementById('cart-items');
+        const emptyMsg = document.getElementById('empty-cart-msg');
+        const totalElement = document.getElementById('cart-total');
+        const btnCheckout = document.getElementById('btn-checkout');
+
+        // ล้างรายการเก่าออก (ยกเว้นกล่องข้อความว่างเปล่า)
+        cartItemsContainer.innerHTML = '';
+
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = `<li class="list-group-item text-center text-muted py-4" id="empty-cart-msg">
+                <i class="fas fa-basket-shopping fs-2 opacity-25 mb-2 d-block"></i>ตะกร้าว่างเปล่า</li>`;
+            totalElement.innerText = '฿0.00';
+            btnCheckout.disabled = true;
+            return;
+        }
+
+        let totalAmount = 0;
+        btnCheckout.disabled = false;
+
+        cart.forEach(item => {
+            const itemTotal = item.price * item.qty;
+            totalAmount += itemTotal;
+
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center py-2 border-bottom-0';
+            li.innerHTML = `
+                <div>
+                    <div class="fw-bold small">${item.name}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">฿${item.price.toFixed(2)}</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-secondary btn-sm p-0" style="width: 24px; height: 24px;" onclick="decreaseQty(${item.id})"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                    <span class="fw-bold small" style="min-width: 15px; text-align: center;">${item.qty}</span>
+                    <button class="btn btn-outline-primary btn-sm p-0" style="width: 24px; height: 24px;" onclick="addToCart(${item.id}, '${item.name}', ${item.price})"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
+                </div>
+            `;
+            cartItemsContainer.appendChild(li);
+        });
+
+        totalElement.innerText = `฿${totalAmount.toFixed(2)}`;
+    }
+
+    // ยืนยันการสั่งซื้อส่งไปที่ Backend
+    function checkout() {
+        if (cart.length === 0) return;
+
+        const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        const customerCount = document.getElementById('customer-count').value;
+        const paymentMethod = document.getElementById('payment-method').value;
+
+        const payload = {
+            items: cart,
+            total_amount: totalAmount,
+            customer_count: parseInt(customerCount),
+            payment_method: paymentMethod
+        };
+
+        const btnCheckout = document.getElementById('btn-checkout');
+        btnCheckout.disabled = true;
+        btnCheckout.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> กำลังสั่งอาหาร...';
+
+        fetch('/customer/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message + ` (หมายเลขออเดอร์: #${data.order_id})`);
+                    cart = []; // เคลียร์ตะกร้า
+                    updateCartUI();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+            })
+            .finally(() => {
+                btnCheckout.disabled = false;
+                btnCheckout.innerHTML = 'ยืนยันการสั่งซื้อ';
+            });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant POS System</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --sidebar-width: 270px;
+            --primary-blue: #2563eb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f8fafc;
+            font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #334155;
+            overflow-x: hidden;
+        }
+
+        /* โครงสร้าง Container หลัก */
+        .app-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* โครงสร้าง Sidebar พื้นฐาน */
+        .sidebar {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            width: var(--sidebar-width);
+            z-index: 1045;
+        }
+
+        /* --- 1. สไตล์สำหรับจอคอมพิวเตอร์ / แท็บเล็ตใหญ่ (Desktop >= 768px) --- */
+        @media (min-width: 768px) {
+            .sidebar {
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                flex-shrink: 0;
+                overflow-y: auto;
+            }
+
+            .main-content {
+                width: calc(100% - var(--sidebar-width));
+                min-height: 100vh;
+                flex-grow: 1;
+            }
+        }
+
+        /* --- 2. สไตล์สำหรับจอมือถือ (Mobile < 768px) --- */
+        @media (max-width: 767.98px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: fixed !important;
+                height: 100% !important;
+            }
+
+            .main-content {
+                width: 100% !important;
+                padding: 1rem !important;
+            }
+        }
+
+        /* Profile Box */
+        .user-profile-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+        }
+
+        /* Custom Nav Link */
+        .nav-link-custom {
+            color: #94a3b8;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 0.925rem;
+            white-space: nowrap;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-link-custom i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.05rem;
+        }
+
+        .nav-link-custom:hover {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-link-custom.active {
+            color: #ffffff !important;
+            font-weight: 500;
+            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .nav-link-custom.text-danger {
+            color: #f87171 !important;
+        }
+
+        .nav-link-custom.text-danger:hover {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444 !important;
+        }
+
+        .menu-section-label {
+            font-size: 0.725rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #64748b;
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 6px;
+            padding-left: 10px;
+        }
+
+        /* Custom Scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navbar เฉพาะจอมือถือ (< 768px) -->
+    <nav class="navbar navbar-dark bg-dark d-md-none px-3 shadow-sm sticky-top">
+        <span class="navbar-brand fw-bold d-flex align-items-center gap-2 mb-0">
+            <i class="fas fa-utensils text-warning"></i> POS System
+        </span>
+        <button class="navbar-toggler border-0 shadow-none px-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </nav>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <div class="offcanvas-md offcanvas-start sidebar text-white p-3 d-flex flex-column" id="sidebarMenu" tabindex="-1">
+            
+            <!-- Header โลโก้ -->
+            <div class="d-flex align-items-center justify-content-between mb-3 px-1 pt-1">
+                <a href="{{ url_for('home') }}" class="d-flex align-items-center gap-2 text-white text-decoration-none">
+                    <div class="bg-warning text-dark rounded-3 px-2 py-1 fs-5 fw-bold">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <h5 class="fw-bold m-0 text-white">POS System</h5>
+                </a>
+                <!-- ปุ่มปิดเมนูบนจอมือถือ -->
+                <button type="button" class="btn-close btn-close-white d-md-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
+            </div>
+
+            <hr class="border-secondary opacity-25 my-2">
+
+            <!-- Profile Info (แสดงเฉพาะผู้ที่เข้าสู่ระบบแล้ว) -->
+            {% if session.get('username') %}
+            <div class="user-profile-box d-flex align-items-center gap-2.5">
+                <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; min-width: 36px;">
+                    {{ session.get('username')[0] | upper }}
+                </div>
+                <div class="overflow-hidden">
+                    <div class="fw-semibold text-white text-truncate small">{{ session.get('username') }}</div>
+                    <span class="badge bg-{{ 'danger' if session.get('role') == 'admin' else ('info' if session.get('role') == 'staff' else 'success') }}-subtle text-{{ 'danger' if session.get('role') == 'admin' else ('info' if session.get('role') == 'staff' else 'success') }} rounded-pill px-2 py-0.5" style="font-size: 0.675rem;">
+                        {{ session.get('role') | upper }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Navigation Links แยกตาม Role อย่างชัดเจน -->
+            <div class="nav flex-column mb-auto">
+
+                <!-- 1. ADMIN MENU -->
+                {% if session.get('role') == 'admin' %}
+                    <div class="menu-section-label">ผู้ดูแลระบบ (Admin)</div>
+                    
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'admin_dashboard' }}">
+                        <i class="fas fa-chart-pie text-info"></i> <span>Dashboard</span>
+                    </a>
+                    
+                    <a href="{{ url_for('admin_menu_list') }}" class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_menu') }}">
+                        <i class="fas fa-hamburger text-warning"></i> <span>จัดการเมนูอาหาร</span>
+                    </a>
+                    
+                    <a href="{{ url_for('admin_staff_list') }}" class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_staff') }}">
+                        <i class="fas fa-users text-primary"></i> <span>จัดการพนักงาน</span>
+                    </a>
+                    
+                    <a href="{{ url_for('admin_payments_list') }}" class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_payments') }}">
+                        <i class="fas fa-qrcode text-success"></i> <span>ช่องทางชำระเงิน</span>
+                    </a>
+
+                    <a href="{{ url_for('admin_sales_history') }}" class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_sales') }}">
+                        <i class="fas fa-receipt text-light"></i> <span>ประวัติการขาย</span>
+                    </a>
+
+                <!-- 2. STAFF MENU -->
+                {% elif session.get('role') == 'staff' %}
+                    <div class="menu-section-label">พนักงาน (Staff Operations)</div>
+                    
+                    <a href="{{ url_for('staff_orders') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'staff_orders' }}">
+                        <i class="fas fa-utensils text-warning"></i> <span>รายการออเดอร์หน้าร้าน</span>
+                    </a>
+                    
+                    <a href="{{ url_for('staff_menu_manage') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'staff_menu_manage' }}">
+                        <i class="fas fa-edit text-info"></i> <span>ปรับสถานะ/สต็อกเมนู</span>
+                    </a>
+
+                <!-- 3. CUSTOMER MENU -->
+                {% elif session.get('role') == 'customer' %}
+                    <div class="menu-section-label">ส่วนของลูกค้า (Customer)</div>
+                    
+                    <a href="{{ url_for('customer_dashboard') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'customer_dashboard' }}">
+                        <i class="fas fa-store text-success"></i> <span>หน้าหลัก / สั่งอาหาร</span>
+                    </a>
+
+                <!-- 4. GUEST MENU (ยังไม่ได้เข้าสู่ระบบ) -->
+                {% else %}
+                    <div class="menu-section-label">เข้าสู่ระบบ</div>
+                    
+                    <a href="{{ url_for('signin') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'signin' }}">
+                        <i class="fas fa-right-to-bracket text-primary"></i> <span>เข้าสู่ระบบ</span>
+                    </a>
+                    
+                    <a href="{{ url_for('signup') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'signup' }}">
+                        <i class="fas fa-user-plus text-success"></i> <span>สมัครสมาชิก</span>
+                    </a>
+                {% endif %}
+
+            </div>
+
+            <!-- ปุ่มออกจากระบบด้านล่าง (แสดงเฉพาะเมื่อเข้าสู่ระบบแล้ว) -->
+            {% if session.get('username') %}
+            <div class="mt-auto pt-2 border-top border-secondary border-opacity-25">
+                <a href="{{ url_for('signout') }}" class="nav-link-custom text-danger">
+                    <i class="fas fa-right-from-bracket"></i> <span>ออกจากระบบ</span>
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content p-3 p-md-4">
+            <!-- Alert แจ้งเตือน -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
+                            <i class="fas {{ 'fa-check-circle text-success' if category == 'success' else 'fa-exclamation-circle text-danger' }} me-2 fs-5 align-middle"></i>
+                            <span class="align-middle fw-medium">{{ message }}</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Dynamic Page Content -->
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

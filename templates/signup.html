@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - La Bella Vita</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="auth-body">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="brand-title">La Bella Vita</h1>
+            <p class="brand-sub">Authentic Italian Dining</p>
+            <h2 class="auth-title">สมัครสมาชิก (สำหรับลูกค้า)</h2>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">
+            <i class="fas {% if category == 'error' %}fa-circle-exclamation{% else %}fa-circle-check{% endif %}"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('signin') }}" class="auth-form">
+            <!-- เพิ่มบรรทัดนี้เพื่อส่ง role 'customer' ไปให้ backend -->
+            <input type="hidden" name="role" value="customer">
+
+            <div class="form-field">
+                <label for="username">Username (ชื่อผู้ใช้งาน) <span class="required-star">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" id="username" name="username" class="input-control"
+                        placeholder="อย่างน้อย 3 ตัวอักษร" required minlength="3">
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="password">Password (รหัสผ่าน) <span class="required-star">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="password" name="password" class="input-control"
+                        placeholder="อย่างน้อย 4 ตัวอักษร" required minlength="4">
+                    <i class="fas fa-eye toggle-eye" id="togglePassword"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <span>Sign Up</span>
+                <i class="fas fa-user-plus"></i>
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>มีบัญชีผู้ใช้แล้ว? <a href="/signin">เข้าสู่ระบบ</a></p>
+        </div>
+    </div>
+
+    <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+    </script>
+</body>
+
+</html>

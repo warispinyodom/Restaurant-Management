@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1">จัดการพนักงาน</h3>
+        <p class="text-muted mb-0 small">จัดการสิทธิ์บัญชีผู้ใช้และรหัสผ่านของพนักงานในระบบ</p>
+    </div>
+    <button class="btn btn-primary shadow-sm px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+        <i class="fas fa-user-plus me-1"></i> เพิ่มพนักงาน
+    </button>
+</div>
+
+<div class="card table-card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">ชื่อผู้ใช้</th>
+                        <th>ตำแหน่ง</th>
+                        <th>สถานะ</th>
+                        <th class="text-end pe-4" style="width: 170px;">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for staff in staff_members %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <span class="fw-bold text-dark">{{ staff.username }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if staff.role == 'admin' %}
+                                <span class="badge bg-dark text-white px-2 py-1"><i class="fas fa-shield-halved me-1"></i>แอดมิน</span>
+                            {% else %}
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info px-2 py-1"><i class="fas fa-user-tag me-1"></i>พนักงานทั่วไป</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if staff.status == 'active' %}
+                                <span class="badge bg-success-subtle text-success border border-success px-2 py-1">ใช้งาน</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2 py-1">ระงับ</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold px-2 py-1 d-inline-flex align-items-center text-nowrap" data-bs-toggle="modal" data-bs-target="#editStaffModal{{ staff.id }}">
+                                    <i class="fas fa-user-pen me-1"></i> แก้ไข
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger fw-semibold px-2 py-1 d-inline-flex align-items-center text-nowrap" onclick="deleteItem('/admin/staff/delete/{{ staff.id }}')">
+                                    <i class="fas fa-trash-can me-1"></i> ลบ
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not staff_members %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">ยังไม่มีข้อมูลพนักงาน</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Staff Modals -->
+{% for staff in staff_members %}
+<div class="modal fade" id="editStaffModal{{ staff.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ url_for('admin_staff_edit', id=staff.id) }}" method="POST" class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">แก้ไขข้อมูล: {{ staff.username }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">ตำแหน่ง</label>
+                    <select name="role" class="form-select">
+                        <option value="staff" {% if staff.role == 'staff' %}selected{% endif %}>พนักงานทั่วไป</option>
+                        <option value="admin" {% if staff.role == 'admin' %}selected{% endif %}>แอดมิน</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">สถานะบัญชี</label>
+                    <select name="status" class="form-select">
+                        <option value="active" {% if staff.status == 'active' %}selected{% endif %}>ใช้งาน</option>
+                        <option value="inactive" {% if staff.status == 'inactive' %}selected{% endif %}>ระงับ</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">รหัสผ่านใหม่</label>
+                    <input type="password" name="password" class="form-control" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="submit" class="btn btn-success px-4">บันทึก</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add Staff Modal -->
+<div class="modal fade" id="addStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ url_for('admin_staff_add') }}" method="POST" class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">เพิ่มพนักงานใหม่</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">ชื่อผู้ใช้งาน (Username)</label>
+                    <input type="text" name="username" class="form-control" placeholder="เช่น staff01" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">รหัสผ่าน</label>
+                    <input type="password" name="password" class="form-control" placeholder="กรอกรหัสผ่าน" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">ตำแหน่ง</label>
+                    <select name="role" class="form-select">
+                        <option value="staff">พนักงานทั่วไป</option>
+                        <option value="admin">แอดมิน</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary px-4">เพิ่มพนักงาน</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteItem(url) {
+    if(confirm('ต้องการลบพนักงานรายนี้ใช่หรือไม่?')) {
+        fetch(url, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') location.reload();
+            else alert('Error: ' + data.message);
+        });
+    }
+}
+</script>
+{% endblock %}

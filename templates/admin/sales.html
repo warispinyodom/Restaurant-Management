@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- Header หน้าประวัติการขาย -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-1">
+                <i class="fas fa-receipt text-primary me-2"></i>ประวัติการขาย (Sales History)
+            </h4>
+            <p class="text-muted small mb-0">ตรวจสอบรายการสั่งซื้อ รายรับ และจัดการการยกเลิกบิล (Void)</p>
+        </div>
+        <div>
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm rounded-2 shadow-sm">
+                <i class="fas fa-print me-1"></i> พิมพ์รายงาน
+            </button>
+        </div>
+    </div>
+
+    <!-- สรุปตัวเลขสำคัญ (Summary Cards) -->
+    <div class="row g-3 mb-4">
+        {% set total_sales = namespace(value=0) %}
+        {% set completed_count = namespace(value=0) %}
+        {% set voided_count = namespace(value=0) %}
+
+        {% for order in orders %}
+        {% if order['status'] == 'completed' %}
+        {% set total_sales.value = total_sales.value + (order['total_amount'] or 0) %}
+        {% set completed_count.value = completed_count.value + 1 %}
+        {% elif order['status'] == 'voided' or order['status'] == 'cancelled' %}
+        {% set voided_count.value = voided_count.value + 1 %}
+        {% endif %}
+        {% endfor %}
+
+        <!-- ยอดขายรวม -->
+        <div class="col-12 col-sm-6 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex align-items-center">
+                    <div class="bg-success bg-opacity-10 text-success rounded-3 p-3 me-3">
+                        <i class="fas fa-wallet fs-3"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">ยอดขายรวมสำเร็จ</div>
+                        <div class="fs-4 fw-bold text-dark">฿{{ "{:,.2f}".format(total_sales.value) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- จำนวนรายการสำเร็จ -->
+        <div class="col-12 col-sm-6 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-3 me-3">
+                        <i class="fas fa-check-circle fs-3"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">รายการขายสำเร็จ</div>
+                        <div class="fs-4 fw-bold text-dark">{{ completed_count.value }} รายการ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- รายการที่ถูกยกเลิก (Voided) -->
+        <div class="col-12 col-sm-6 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex align-items-center">
+                    <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-3 me-3">
+                        <i class="fas fa-ban fs-3"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">รายการที่ยกเลิก (Void)</div>
+                        <div class="fs-4 fw-bold text-dark">{{ voided_count.value }} รายการ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ตารางแสดงรายการสั่งซื้อ -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-header bg-white py-3 border-0">
+            <h6 class="fw-bold m-0 text-secondary">
+                <i class="fas fa-list me-2"></i>รายการสั่งซื้อทั้งหมด ({{ orders|length }} รายการ)
+            </h6>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3" style="width: 100px;">รหัสออเดอร์</th>
+                            <th>จำนวนลูกค้า / โต๊ะ</th>
+                            <th>ยอดรวม</th>
+                            <th>ช่องทางชำระ</th>
+                            <th>สถานะ</th>
+                            <th>วันที่-เวลา</th>
+                            <th class="text-end pe-3">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if orders %}
+                        {% for order in orders %}
+                        <tr id="order-row-{{ order['id'] }}">
+                            <td class="ps-3 fw-bold text-primary">#{{ order['id'] }}</td>
+                            <td>
+                                <span class="fw-medium text-dark">
+                                    <i class="fas fa-users text-muted me-1"></i> {{ order['customer_count'] or 1 }} คน
+                                </span>
+                            </td>
+                            <td class="fw-bold">
+                                ฿{{ "{:,.2f}".format(order['total_amount'] or 0) }}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border px-2 py-1">
+                                    {{ order['payment_method'] or 'เงินสด/PromptPay' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if order['status'] == 'completed' %}
+                                <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1">
+                                    <i class="fas fa-check me-1"></i>สำเร็จ
+                                </span>
+                                {% elif order['status'] == 'voided' or order['status'] == 'cancelled' %}
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1">
+                                    <i class="fas fa-times me-1"></i>ยกเลิกแล้ว (Void)
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning-subtle text-warning rounded-pill px-2.5 py-1">
+                                    <i class="fas fa-clock me-1"></i>{{ order['status'] or 'รอดำเนินการ' }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted small">
+                                {{ order['created_at'] or '-' }}
+                            </td>
+                            <td class="text-end pe-3">
+                                {% if order['status'] != 'voided' and order['status'] != 'cancelled' %}
+                                <button class="btn btn-outline-danger btn-sm rounded-2" data-id="{{ order.id }}"
+                                    onclick="voidOrder(this.getAttribute('data-id'))">
+                                    <i class="fas fa-ban me-1"></i> ยกเลิกรายการ
+                                </button>
+                                {% else %}
+                                <span class="text-muted small">ไม่มีการดำเนินการ</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox fs-1 mb-2 d-block opacity-50"></i>
+                                ยังไม่มีประวัติการขายในระบบ
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function voidOrder(orderId) {
+        if (confirm(`คุณต้องการยกเลิกรายการสั่งซื้อ #${orderId} ใช่หรือไม่?`)) {
+            fetch(`/admin/sales/void/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                });
+        }
+    }
+</script>
+{% endblock %}

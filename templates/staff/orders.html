@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- Top Bar: หัวข้อ + สวิตช์สลับสถานะพนักงาน -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3 bg-white p-3 rounded-3 shadow-sm border">
+    <div class="d-flex align-items-center gap-3">
+        <h3 class="fw-bold mb-0"><i class="fas fa-utensils text-primary me-2"></i> รายการออเดอร์หน้าร้าน</h3>
+        <span class="badge bg-primary rounded-pill px-3 py-2 fs-6">ออเดอร์ทั้งหมด: {{ orders|length }}</span>
+    </div>
+    
+    <!-- ปุ่มเปลี่ยนสถานะตนเองของพนักงาน -->
+    <div class="d-flex align-items-center gap-2 border-start ps-md-3">
+        <span class="fw-bold text-muted small">สถานะพนักงาน:</span>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-{{ 'success' if staff_status == 'ready' else 'danger' }} dropdown-toggle fw-bold rounded-pill px-3" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-circle me-1 small"></i> {{ 'พร้อมรับงาน' if staff_status == 'ready' else 'ไม่พร้อม (พัก)' }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li>
+                    <a class="dropdown-item text-success fw-bold" href="#" onclick="updateStaffStatus('ready')">
+                        <i class="fas fa-check-circle me-2"></i> พร้อมรับงาน
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item text-danger fw-bold" href="#" onclick="updateStaffStatus('busy')">
+                        <i class="fas fa-minus-circle me-2"></i> ไม่พร้อม (พัก)
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ปุ่มกรองแสดงออเดอร์ตามสถานะ -->
+<div class="d-flex gap-2 mb-4 overflow-auto pb-2">
+    <button class="btn btn-dark rounded-pill px-3 active" onclick="filterOrders('all')">ทั้งหมด</button>
+    <button class="btn btn-outline-warning rounded-pill px-3" onclick="filterOrders('pending')">รอดำเนินการ</button>
+    <button class="btn btn-outline-info rounded-pill px-3" onclick="filterOrders('cooking')">กำลังทำ</button>
+    <button class="btn btn-outline-success rounded-pill px-3" onclick="filterOrders('ready')">พร้อมเสิร์ฟ</button>
+</div>
+
+<!-- Grid แสดงการ์ดออเดอร์ -->
+<div class="row g-3">
+    {% for order in orders %}
+    <div class="col-12 col-md-6 col-lg-4 order-card" data-status="{{ order.status }}">
+        <div class="card border-0 shadow-sm rounded-3 h-100 border-start border-4 border-{{ 'warning' if order.status == 'pending' else ('info' if order.status == 'cooking' else ('success' if order.status == 'ready' else 'secondary')) }}">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3">
+                <span class="fw-bold fs-5 text-dark">โต๊ะ {{ order.table_no }} <small class="text-muted fs-6">(#{{ order.id }})</small></span>
+                <span class="badge bg-{{ 'warning' if order.status == 'pending' else ('info' if order.status == 'cooking' else ('success' if order.status == 'ready' else 'secondary')) }}-subtle text-dark border px-2 py-1">
+                    {{ 'รอดำเนินการ' if order.status == 'pending' else ('กำลังทำ' if order.status == 'cooking' else ('พร้อมเสิร์ฟ' if order.status == 'ready' else 'เสร็จสิ้น')) }}
+                </span>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush mb-3">
+                    {% for item in order.items %}
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center border-0 py-1">
+                        <div>
+                            <span class="fw-bold text-dark">{{ item.name or item.menu_name }}</span>
+                            <span class="badge bg-secondary rounded-pill ms-1">x{{ item.quantity if item.quantity is defined else item.qty }}</span>
+                        </div>
+                        <span class="text-muted small">฿{{ item.price * (item.quantity if item.quantity is defined else item.qty) }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                    <span class="text-muted small">ราคารวมสุทธิ</span>
+                    <span class="fw-bold text-primary fs-5">฿{{ order.total_price if order.total_price is defined else order.total_amount }}</span>
+                </div>
+            </div>
+            
+            <!-- ปุ่มเปลี่ยนสถานะออเดอร์ (ใส่ quotes ครอบ {{ order.id }}) -->
+            <div class="card-footer bg-light border-0 p-3">
+                <div class="d-flex gap-2">
+                    {% if order.status == 'pending' %}
+                        <button class="btn btn-warning w-100 fw-bold" onclick="changeOrderStatus('{{ order.id }}', 'cooking')">
+                            <i class="fas fa-fire me-1"></i> เริ่มทำอาหาร
+                        </button>
+                    {% elif order.status == 'cooking' %}
+                        <button class="btn btn-info text-white w-100 fw-bold" onclick="changeOrderStatus('{{ order.id }}', 'ready')">
+                            <i class="fas fa-bell me-1"></i> ทำเสร็จแล้ว (พร้อมเสิร์ฟ)
+                        </button>
+                    {% elif order.status == 'ready' %}
+                        <button class="btn btn-success w-100 fw-bold" onclick="changeOrderStatus('{{ order.id }}', 'completed')">
+                            <i class="fas fa-check-circle me-1"></i> เสิร์ฟแล้ว / เสร็จสิ้น
+                        </button>
+                    {% else %}
+                        <button class="btn btn-secondary w-100 disabled" disabled>เสร็จสิ้นแล้ว</button>
+                    {% endif %}
+                    
+                    {% if order.status != 'completed' and order.status != 'cancelled' %}
+                        <button class="btn btn-outline-danger" title="ยกเลิกออเดอร์" onclick="changeOrderStatus('{{ order.id }}', 'cancelled')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// เปลี่ยนสถานะการทำงานของพนักงาน
+function updateStaffStatus(status) {
+    fetch('/staff/status/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === 'success') location.reload();
+        else alert('Error: ' + data.message);
+    });
+}
+
+// เปลี่ยนสถานะของ Order
+function changeOrderStatus(orderId, nextStatus) {
+    fetch(`/staff/order/update-status/${orderId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === 'success') location.reload();
+        else alert('Error: ' + data.message);
+    });
+}
+
+// กรองออเดอร์ตามสถานะ
+function filterOrders(status) {
+    const cards = document.querySelectorAll('.order-card');
+    cards.forEach(card => {
+        if (status === 'all' || card.dataset.status === status) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}
