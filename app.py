@@ -1,13 +1,17 @@
 import os
 import sqlite3
 import ssl
+import urllib.request
+import urllib.parse
+import json
 from functools import wraps
 from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-import urllib.request
-import json
+
+# ตั้งค่าชื่อ Firebase Storage Bucket
+FIREBASE_BUCKET = "webapplication-e7922.firebasestorage.app"
 
 from models import get_db_connection, init_db
 # 1. นำเข้าฟังก์ชันจาก auth_utils (Firebase Auth)
@@ -36,17 +40,44 @@ ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
 
-# กำหนดโฟลเดอร์สำหรับเก็บไฟล์รูปภาพอัปโหลด
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
+# นามสกุลไฟล์ที่อนุญาต
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# สร้างโฟลเดอร์ uploads และสร้างตารางใน Database อัตโนมัติเมื่อเริ่มระบบ
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# สร้างตารางใน Database อัตโนมัติเมื่อเริ่มระบบ
 init_db()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def upload_to_firebase_storage(file, folder="uploads"):
+    """ฟังก์ชันอัปโหลดไฟล์รูปภาพไปยัง Firebase Storage ผ่าน REST API"""
+    try:
+        if not file or not file.filename:
+            return None
+            
+        filename = secure_filename(f"{folder}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+        storage_path = f"{folder}/{filename}"
+        encoded_path = urllib.parse.quote(storage_path, safe='')
+        
+        upload_url = f"https://firebasestorage.googleapis.com/v0/b/{FIREBASE_BUCKET}/o?uploadType=media&name={encoded_path}"
+        
+        file_data = file.read()
+        content_type = file.content_type or 'image/jpeg'
+        
+        req = urllib.request.Request(
+            upload_url,
+            data=file_data,
+            headers={'Content-Type': content_type},
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(req, context=ssl_context) as response:
+            if response.status in [200, 201]:
+                # ส่งคืน URL สาธารณะของไฟล์บน Firebase Storage
+                return f"https://firebasestorage.googleapis.com/v0/b/{FIREBASE_BUCKET}/o/{encoded_path}?alt=media"
+    except Exception as e:
+        print(f"Firebase Storage Upload Error: {e}")
+    return None
 
 # Helper ตรวจสอบสิทธิ์ Admin
 def admin_required(func_route):
@@ -239,21 +270,19 @@ def admin_staff_toggle_status(user_id):
         return jsonify({'status': 'error', 'message': 'ไม่สามารถอัปเดตข้อมูลได้'}), 500
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-    
+
 # ==========================================
-# STAFF: MENU MANAGEMENT (แก้ไขปัญหา Method not iterable)
+# STAFF: MENU MANAGEMENT
 # ==========================================
 
 @app.route('/staff/menu-manage')
 @staff_required
 def staff_menu_manage():
     try:
-        # ดึงข้อมูลรายการเมนูจาก SQLite หรือ Firebase
         conn = get_db_connection()
         raw_menus = conn.execute('SELECT * FROM menus').fetchall()
         conn.close()
         
-        # แปลงเป็น list ของ dict เพื่อความปลอดภัยในการดึงไปใช้ใน Jinja2
         menus = [dict(item) for item in raw_menus] if raw_menus else []
     except Exception as e:
         menus = []
@@ -287,7 +316,6 @@ def quick_update_menu(menu_id):
 @app.route('/api/admin/dashboard_stats')
 @admin_required
 def dashboard_stats():
-    # คำนวณสถิติวันนี้จาก Firebase Realtime Database
     today_str = datetime.now().strftime("%Y-%m-%d")
     orders = get_all_orders()
     
@@ -299,12 +327,10 @@ def dashboard_stats():
             if isinstance(order, dict):
                 created_at = order.get('created_at', '')
                 status = order.get('status', '')
-                # กรองออเดอร์เฉพาะของวันนี้และสถานะเสร็จสิ้น/ชำระเงินแล้ว
                 if created_at.startswith(today_str) and status in ['completed', 'paid']:
                     sales_today += float(order.get('total_amount', 0))
                     customers_today += int(order.get('customer_count', 0))
 
-    # ดึงจำนวน Staff ทั้งหมดจาก Firebase
     all_users = get_all_users()
     active_staff = sum(
         1 for uid, u in all_users.items() 
@@ -318,7 +344,7 @@ def dashboard_stats():
     })
 
 # ==========================================
-# ADMIN: MENU MANAGEMENT (CRUD - SQLite)
+# ADMIN: MENU MANAGEMENT (อัปโหลดรูปไป Firebase Storage)
 # ==========================================
 
 @app.route('/admin/menu')
@@ -340,18 +366,16 @@ def admin_menu_add():
         size = request.form.get('size', 'ปกติ')
         status = request.form.get('status', 'available')
 
-        image_filename = None
+        image_url = None
         file = request.files.get('image')
         if file and allowed_file(file.filename):
-            filename = secure_filename(f"menu_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            image_filename = filename
+            image_url = upload_to_firebase_storage(file, folder="menus")
 
         conn = get_db_connection()
         conn.execute('''
             INSERT INTO menus (name, category, price, spice_level, size, status, image_file)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (name, category, price, spice_level, size, status, image_filename))
+        ''', (name, category, price, spice_level, size, status, image_url))
         conn.commit()
         conn.close()
 
@@ -376,13 +400,12 @@ def admin_menu_edit(id):
         conn = get_db_connection()
 
         if file and allowed_file(file.filename):
-            filename = secure_filename(f"menu_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            image_url = upload_to_firebase_storage(file, folder="menus")
             conn.execute('''
                 UPDATE menus 
                 SET name=?, category=?, price=?, spice_level=?, size=?, status=?, image_file=?
                 WHERE id=?
-            ''', (name, category, price, spice_level, size, status, filename, id))
+            ''', (name, category, price, spice_level, size, status, image_url, id))
         else:
             conn.execute('''
                 UPDATE menus 
@@ -451,7 +474,6 @@ def admin_staff_add():
             flash("ชื่อผู้ใช้นี้มีในระบบแล้ว", "error")
             return redirect(url_for('admin_staff_list'))
 
-        # เข้ารหัสผ่านก่อนบันทึก
         hashed_password = generate_password_hash(password)
 
         if create_user(username, hashed_password, role):
@@ -473,27 +495,22 @@ def admin_staff_edit(user_id):
         status_input = request.form.get('is_active', 'true')
         password = request.form.get('password', '').strip()
 
-        # บังคับว่าถ้าเป็น Admin จะต้องเปิดใช้งาน (True) เสมอ
         if role == 'admin':
             is_active = True
         else:
             is_active = True if str(status_input).lower() in ['true', 'on', '1'] else False
 
-        # ข้อมูลที่จะส่งไปอัปเดตที่ Firebase
         update_data = {
             "role": role,
             "is_active": is_active
         }
 
-        # ถ้ามี username ส่งมา ให้ใส่ไว้ในอัปเดต
         if username:
             update_data["username"] = username
 
-        # ถ้ามีการกรอกรหัสผ่านใหม่ ให้เข้ารหัสก่อนอัปเดตลง Firebase
         if password:
             update_data["password"] = generate_password_hash(password)
 
-        # ส่ง PATCH Request อัปเดตข้อมูลบน Firebase Realtime Database
         url = f"{FIREBASE_URL}/users/{user_id}.json"
         payload = json.dumps(update_data).encode('utf-8')
         req = urllib.request.Request(
@@ -529,7 +546,7 @@ def admin_staff_delete(id):
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # ==========================================
-# ADMIN: PAYMENT CHANNELS MANAGEMENT (SQLite)
+# ADMIN: PAYMENT CHANNELS MANAGEMENT (อัปโหลดรูปไป Firebase Storage)
 # ==========================================
 
 @app.route('/admin/payments')
@@ -554,14 +571,13 @@ def admin_payments_add():
             flash("กรุณาอัปโหลดรูปภาพ QR Code ที่ถูกต้อง", "error")
             return redirect(url_for('admin_payments_list'))
 
-        filename = secure_filename(f"qr_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        qr_url = upload_to_firebase_storage(file, folder="payments")
 
         conn = get_db_connection()
         conn.execute('''
             INSERT INTO payment_channels (bank_name, account_name, promptpay_no, qr_image, is_active)
             VALUES (?, ?, ?, ?, ?)
-        ''', (bank_name, account_name, promptpay_no, filename, is_active))
+        ''', (bank_name, account_name, promptpay_no, qr_url, is_active))
         conn.commit()
         conn.close()
 
@@ -584,13 +600,12 @@ def admin_payments_edit(id):
         conn = get_db_connection()
 
         if file and allowed_file(file.filename):
-            filename = secure_filename(f"qr_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            qr_url = upload_to_firebase_storage(file, folder="payments")
             conn.execute('''
                 UPDATE payment_channels 
                 SET bank_name=?, account_name=?, promptpay_no=?, qr_image=?, is_active=?
                 WHERE id=?
-            ''', (bank_name, account_name, promptpay_no, filename, is_active, id))
+            ''', (bank_name, account_name, promptpay_no, qr_url, is_active, id))
         else:
             conn.execute('''
                 UPDATE payment_channels 
@@ -666,14 +681,12 @@ def customer_checkout():
 
     data = request.get_json() or {}
     
-    # --- ดักจับและแปลงค่า total_amount ให้ปลอดภัย ---
     raw_total = data.get('total_amount')
     try:
         total_amount = float(raw_total) if raw_total is not None else 0.0
     except (ValueError, TypeError):
         total_amount = 0.0
 
-    # --- ดักจับ customer_count กรณีเป็น None หรือไม่ใช่ตัวเลข ---
     raw_count = data.get('customer_count')
     try:
         customer_count = int(raw_count) if raw_count is not None else 1
