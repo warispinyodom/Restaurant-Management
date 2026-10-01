@@ -132,6 +132,14 @@ def delete_firebase_data(path, item_id):
         print(f"Error deleting {path}/{item_id}: {e}")
         return False
 
+def parse_firebase_data(data):
+    """แปลงข้อมูลจาก Firebase ให้เป็น List อย่างปลอดภัย (รองรับกรณี Firebase ส่งมาเป็น List หรือ Dict)"""
+    if isinstance(data, dict):
+        return [{'id': str(k), **v} for k, v in data.items() if isinstance(v, dict)]
+    elif isinstance(data, list):
+        return [{'id': str(i), **v} for i, v in enumerate(data) if v and isinstance(v, dict)]
+    return []
+
 # ==========================================
 # Guards
 # ==========================================
@@ -296,10 +304,12 @@ def admin_staff_toggle_status(user_id):
 def staff_menu_manage():
     try:
         raw_menus = get_firebase_data('menus')
-        menus = [{'id': k, **v} for k, v in raw_menus.items()] if raw_menus else []
+        menus = parse_firebase_data(raw_menus)
     except Exception as e:
+        print(f"Error loading staff menus: {e}") # ปริ้นเก็บไว้ดูเองใน Console
         menus = []
-        flash(f"เกิดข้อผิดพลาดในการโหลดเมนู: {str(e)}", "error")
+        # ซ่อน Exception จากผู้ใช้ แสดงแค่ข้อความทั่วไป
+        flash("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูลเมนู กรุณาลองใหม่อีกครั้ง", "error") 
 
     return render_template('staff/menu_manage.html', menus=menus)
 
@@ -360,8 +370,14 @@ def dashboard_stats():
 @app.route('/admin/menu')
 @admin_required
 def admin_menu_list():
-    raw_menus = get_firebase_data('menus')
-    menus = [{'id': k, **v} for k, v in raw_menus.items()] if raw_menus else []
+    try:
+        raw_menus = get_firebase_data('menus')
+        menus = parse_firebase_data(raw_menus)
+    except Exception as e:
+        print(f"Error loading admin menus: {e}")
+        menus = []
+        flash("เกิดข้อผิดพลาดในการโหลดข้อมูลเมนู", "error")
+        
     return render_template('admin/menu.html', menus=menus)
 
 @app.route('/admin/menu/add', methods=['POST'])
@@ -622,11 +638,17 @@ def customer_dashboard():
         flash("หน้านี้สำหรับลูกค้าเท่านั้น", "error")
         return redirect(url_for('home'))
     
-    raw_menus = get_firebase_data('menus')
-    menus = [{'id': k, **v} for k, v in raw_menus.items() if v.get('status') == 'available'] if raw_menus else []
-    
-    raw_payments = get_firebase_data('payment_channels')
-    payments = [{'id': k, **v} for k, v in raw_payments.items() if v.get('is_active') == 1] if raw_payments else []
+    try:
+        raw_menus = get_firebase_data('menus')
+        # กรองเฉพาะเมนูที่พร้อมขาย
+        menus = [m for m in parse_firebase_data(raw_menus) if m.get('status') == 'available']
+        
+        raw_payments = get_firebase_data('payment_channels')
+        payments = [p for p in parse_firebase_data(raw_payments) if p.get('is_active') == 1]
+    except Exception as e:
+        print(f"Error loading customer data: {e}")
+        menus, payments = [], []
+        flash("เกิดข้อผิดพลาดในการโหลดข้อมูลร้านค้า กรุณารีเฟรชหน้าเว็บ", "error")
     
     return render_template('customer/customer.html', menus=menus, payments=payments)
 
