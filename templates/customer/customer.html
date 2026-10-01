@@ -13,13 +13,15 @@
                 {% for menu in menus %}
                 <div class="col-12 col-md-6 col-xl-4">
                     <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden position-relative">
-                        <!-- รูปภาพเมนู -->
+                        <!-- รูปภาพเมนู รองรับ Firebase URL และ Local Uploads -->
                         {% if menu['image_file'] %}
-                        <img src="{{ url_for('static', filename='uploads/' + menu['image_file']) }}"
-                            class="card-img-top" alt="{{ menu['name'] }}" style="height: 160px; object-fit: cover;">
+                            {% if menu['image_file'].startswith('http') %}
+                                <img src="{{ menu['image_file'] }}" class="card-img-top object-fit-cover" alt="{{ menu['name'] }}" style="height: 160px;">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='uploads/' + menu['image_file']) }}" class="card-img-top object-fit-cover" alt="{{ menu['name'] }}" style="height: 160px;">
+                            {% endif %}
                         {% else %}
-                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted"
-                            style="height: 160px;">
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted" style="height: 160px;">
                             <i class="fas fa-image fs-1 opacity-25"></i>
                         </div>
                         {% endif %}
@@ -54,14 +56,11 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-3 sticky-top" style="top: 20px;">
                 <div class="card-header bg-white py-3 border-bottom border-light">
-                    <h5 class="fw-bold m-0"><i class="fas fa-shopping-cart text-warning me-2"></i> รายการสั่งซื้อของคุณ
-                    </h5>
+                    <h5 class="fw-bold m-0"><i class="fas fa-shopping-cart text-warning me-2"></i> รายการสั่งซื้อของคุณ</h5>
                 </div>
 
                 <div class="card-body p-0">
-                    <!-- รายการสินค้าที่เลือก -->
-                    <ul class="list-group list-group-flush" id="cart-items"
-                        style="max-height: 400px; overflow-y: auto;">
+                    <ul class="list-group list-group-flush" id="cart-items" style="max-height: 400px; overflow-y: auto;">
                         <li class="list-group-item text-center text-muted py-4" id="empty-cart-msg">
                             <i class="fas fa-basket-shopping fs-2 opacity-25 mb-2 d-block"></i>
                             ตะกร้าว่างเปล่า
@@ -72,8 +71,7 @@
                 <div class="card-footer bg-white border-top border-light p-3">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">จำนวนโต๊ะ / ลูกค้า</span>
-                        <input type="number" id="customer-count" class="form-control form-control-sm w-25 text-center"
-                            value="1" min="1">
+                        <input type="number" id="customer-count" class="form-control form-control-sm w-25 text-center" value="1" min="1">
                     </div>
                     <div class="d-flex justify-content-between mb-3">
                         <span class="fw-bold text-dark fs-5">ยอดรวมทั้งหมด</span>
@@ -82,17 +80,27 @@
 
                     <div class="mb-3">
                         <label class="form-label small text-muted">ช่องทางการชำระเงิน</label>
-                        <select class="form-select form-select-sm" id="payment-method">
-                            <option value="เงินสด">เงินสด</option>
+                        <select class="form-select form-select-sm" id="payment-method" onchange="togglePaymentQR()">
+                            <option value="เงินสด" data-type="cash">เงินสด</option>
                             {% for payment in payments %}
-                            <option value="{{ payment['bank_name'] }} - {{ payment['account_name'] }}">โอนเงิน ({{
-                                payment['bank_name'] }})</option>
+                            <option value="{{ payment['bank_name'] }} - {{ payment['account_name'] }}"
+                                    data-type="qr" 
+                                    data-bank="{{ payment['bank_name'] }}"
+                                    data-account="{{ payment['account_name'] }}"
+                                    data-no="{{ payment['promptpay_no'] }}"
+                                    data-qr="{% if payment['qr_image'] %}{% if payment['qr_image'].startswith('http') %}{{ payment['qr_image'] }}{% else %}{{ url_for('static', filename='uploads/' + payment['qr_image']) }}{% endif %}{% endif %}">
+                                โอนเงิน ({{ payment['bank_name'] }})
+                            </option>
                             {% endfor %}
                         </select>
+
+                        <!-- ปุ่มแสดง Modal ป๊อปอัพ QR Code -->
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-2 d-none shadow-sm fw-semibold" id="btn-show-qr" data-bs-toggle="modal" data-bs-target="#qrModal">
+                            <i class="fas fa-qrcode me-1"></i> สแกนจ่ายเงิน QR Code
+                        </button>
                     </div>
 
-                    <button class="btn btn-success w-100 fw-bold py-2 shadow-sm" id="btn-checkout" onclick="checkout()"
-                        disabled>
+                    <button class="btn btn-success w-100 fw-bold py-2 shadow-sm" id="btn-checkout" onclick="checkout()" disabled>
                         ยืนยันการสั่งซื้อ
                     </button>
                 </div>
@@ -101,14 +109,37 @@
 
     </div>
 </div>
+
+<!-- Modal ป๊อปอัพ สแกนจ่าย QR Code -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold" id="qrModalTitle"><i class="fas fa-qrcode me-1 text-primary"></i> สแกนชำระเงิน</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-3">
+                <div class="bg-light p-2 rounded mb-3 border">
+                    <img id="qrModalImg" src="" class="img-fluid rounded" style="max-height: 240px; object-fit: contain;" alt="QR Code Payment">
+                </div>
+                <div class="small text-start">
+                    <p class="mb-1"><strong>ธนาคาร:</strong> <span id="qrModalBank">-</span></p>
+                    <p class="mb-1"><strong>ชื่อบัญชี:</strong> <span id="qrModalAccount">-</span></p>
+                    <p class="mb-0"><strong>พร้อมเพย์/เลขบัญชี:</strong> <span id="qrModalNo" class="font-monospace fw-bold text-primary">-</span></p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-center">
+                <button type="button" class="btn btn-secondary btn-sm px-4 rounded-pill" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // 1. ตัวแปรเก็บรายการสินค้าในตะกร้า
     let cart = [];
 
-    // 2. ฟังก์ชันเพิ่มสินค้าลงตะกร้า
     function addToCart(id, name, price) {
         let cleanPrice = Math.abs(parseFloat(price)) || 0;
         let existingItem = cart.find(item => item.id == id);
@@ -127,19 +158,17 @@
         updateCartUI();
     }
 
-    // 3. ฟังก์ชันปรับเปลี่ยนจำนวนสินค้า (+ / -)
     function changeQty(id, change) {
         let itemIndex = cart.findIndex(item => item.id == id);
         if (itemIndex !== -1) {
             cart[itemIndex].qty += change;
             if (cart[itemIndex].qty <= 0) {
-                cart.splice(itemIndex, 1); // ลบออกจากตะกร้าถ้าเหลือ 0
+                cart.splice(itemIndex, 1);
             }
             updateCartUI();
         }
     }
 
-    // 4. ฟังก์ชันวาดรายการสินค้าในตะกร้าและคำนวณราคารวม
     function updateCartUI() {
         const cartItemsContainer = document.getElementById('cart-items');
         const totalElement = document.getElementById('cart-total');
@@ -192,7 +221,23 @@
         totalElement.innerText = `฿${totalAmount.toFixed(2)}`;
     }
 
-    // 5. ฟังก์ชันส่งข้อมูลการสั่งซื้อไปยัง Backend
+    // สลับการแสดงปุ่มและข้อมูลป๊อปอัพ QR Code สแกนจ่าย
+    function togglePaymentQR() {
+        const select = document.getElementById('payment-method');
+        const selectedOption = select.options[select.selectedIndex];
+        const btnShowQr = document.getElementById('btn-show-qr');
+
+        if (selectedOption.dataset.type === 'qr') {
+            btnShowQr.classList.remove('d-none');
+            document.getElementById('qrModalBank').innerText = selectedOption.dataset.bank || '-';
+            document.getElementById('qrModalAccount').innerText = selectedOption.dataset.account || '-';
+            document.getElementById('qrModalNo').innerText = selectedOption.dataset.no || '-';
+            document.getElementById('qrModalImg').src = selectedOption.dataset.qr || '';
+        } else {
+            btnShowQr.classList.add('d-none');
+        }
+    }
+
     function checkout() {
         if (cart.length === 0) return;
 
@@ -220,7 +265,7 @@
         .then(data => {
             if (data.status === 'success') {
                 alert((data.message || 'สั่งอาหารสำเร็จ!') + ` (หมายเลขออเดอร์: #${data.order_id})`);
-                cart = []; // เคลียร์ตะกร้า
+                cart = [];
                 updateCartUI();
             } else {
                 alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถทำรายการได้'));
