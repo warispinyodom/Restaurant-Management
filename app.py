@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import ssl
+from functools import wraps
 from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.utils import secure_filename
@@ -26,6 +28,14 @@ from staff_utils import (
 app = Flask(__name__)
 app.secret_key = 'restaurant_super_secret'
 
+# URL Firebase Realtime Database
+FIREBASE_URL = "https://webapplication-e7922-default-rtdb.asia-southeast1.firebasedatabase.app"
+
+# SSL Context สำหรับการเชื่อมต่อ REST API
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+
 # กำหนดโฟลเดอร์สำหรับเก็บไฟล์รูปภาพอัปโหลด
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
@@ -40,22 +50,22 @@ def allowed_file(filename):
 
 # Helper ตรวจสอบสิทธิ์ Admin
 def admin_required(func_route):
+    @wraps(func_route)
     def wrapper(*args, **kwargs):
         if session.get('role') != 'admin':
             flash("คุณไม่มีสิทธิ์เข้าถึงหน้านี้", "error")
             return redirect(url_for('home'))
         return func_route(*args, **kwargs)
-    wrapper.__name__ = func_route.__name__
     return wrapper
 
 # Helper ตรวจสอบสิทธิ์ Staff
 def staff_required(func_route):
+    @wraps(func_route)
     def wrapper(*args, **kwargs):
         if session.get('role') not in ['staff', 'admin']:
             flash("คุณไม่มีสิทธิ์เข้าถึงหน้าพนักงาน", "error")
             return redirect(url_for('home'))
         return func_route(*args, **kwargs)
-    wrapper.__name__ = func_route.__name__
     return wrapper
 
 # ==========================================
@@ -78,12 +88,15 @@ def home():
 def signup():
     if request.method == 'POST':
         try:
-            username = request.form['username'].strip()
-            password = request.form['password'].strip()
+            username = request.form.get('username', '').strip()
+            password = request.form.get('password', '').strip()
             role = 'customer' 
 
             # ดึงผู้ใช้ทั้งหมดมาเช็คชื่อซ้ำจาก Firebase
             users = get_all_users()
+            if not isinstance(users, dict):
+                users = {}
+
             is_duplicate = any(
                 info.get('username') == username 
                 for uid, info in users.items() if isinstance(info, dict)
@@ -99,16 +112,19 @@ def signup():
                 flash(msg, "error")
                 return redirect(url_for('signup'))
 
-            # --- เพิ่มบรรทัดนี้: เข้ารหัสผ่านก่อนบันทึก ---
+            # เข้ารหัสผ่านก่อนบันทึก
             hashed_password = generate_password_hash(password)
             
-            # บันทึกผู้ใช้ลง Firebase (ส่ง hashed_password ไปแทน password)
+            # บันทึกผู้ใช้ลง Firebase
             if create_user(username, hashed_password, role):
                 flash("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ", "success")
                 return redirect(url_for('signin'))
+            else:
+                flash("ไม่สามารถเชื่อมต่อฐานข้อมูล Firebase ได้ กรุณาลองใหม่อีกครั้ง", "error")
+                return redirect(url_for('signup'))
                 
-        except Exception:
-            flash("เกิดข้อผิดพลาดของระบบ", "error")
+        except Exception as e:
+            flash(f"เกิดข้อผิดพลาดของระบบ: {str(e)}", "error")
             return redirect(url_for('signup'))
 
     return render_template('signup.html')
@@ -116,15 +132,20 @@ def signup():
 @app.route('/signin', methods=['GET', 'POST'])
 def signin():
     if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password'].strip()
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
 
-        # ตรวจสอบการ Login กับ Firebase
         is_valid, user_info = check_credentials(username, password)
         
         if is_valid:
+            # ตรวจสอบว่าบัญชีถูกระงับหรือไม่
+            if not user_info.get('is_active', True):
+                flash("บัญชีของคุณถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ", "error")
+                return render_template('signin.html')
+
             session['username'] = user_info['username']
             session['role'] = user_info['role']
+            session['user_id'] = user_info.get('id', '')
             
             role = user_info['role']
             if role == 'admin':
@@ -150,53 +171,107 @@ def signout():
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
-    return render_template('dashboard.html', username=session['username'], role=session['role'])
+    return render_template('dashboard.html', username=session.get('username'), role=session.get('role'))
 
 # --- ระบบ Staff (ออเดอร์ / สต็อก / สถานะพนักงาน) ---
 
 @app.route('/staff/orders')
 @staff_required
 def staff_orders():
-    staff_status = session.get('staff_status', 'ready')
-    orders = get_all_orders()
-    return render_template('staff/orders.html', orders=orders, staff_status=staff_status)
+    try:
+        staff_status = session.get('staff_status', 'ready')
+        orders = get_all_orders()
+        if orders is None:
+            orders = {}
+        return render_template('staff/orders.html', orders=orders, staff_status=staff_status)
+    except Exception as e:
+        flash(f"เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล: {str(e)}", "error")
+        return render_template('staff/orders.html', orders={}, staff_status='ready')
 
 @app.route('/staff/status/update', methods=['POST'])
 @staff_required
 def update_staff_status():
-    data = request.get_json()
-    new_status = data.get('status')
+    data = request.get_json() or {}
+    new_status = data.get('status', 'ready')
     session['staff_status'] = new_status
     return jsonify({'status': 'success', 'message': f'เปลี่ยนสถานะพนักงานเป็น {new_status} สำเร็จ'})
 
-@app.route('/staff/order/update-status/<order_id>', methods=['POST'])
-@staff_required
-def update_order_status(order_id):
-    data = request.get_json()
-    new_status = data.get('status')
+# ==========================================
+# ADMIN: TOGGLE STAFF STATUS (ล็อคไม่ให้ระงับ Admin)
+# ==========================================
+
+@app.route('/admin/staff/toggle-status/<user_id>', methods=['POST'])
+@admin_required
+def admin_staff_toggle_status(user_id):
+    try:
+        url_get = f"{FIREBASE_URL}/users/{user_id}.json"
+        req_get = urllib.request.Request(url_get)
+        with urllib.request.urlopen(req_get, context=ssl_context) as response:
+            target_user = json.loads(response.read().decode('utf-8')) or {}
+
+        # ตรวจสอบ: ห้ามระงับบัญชีที่เป็น Admin
+        if target_user.get('role') == 'admin':
+            return jsonify({
+                'status': 'error', 
+                'message': 'ไม่สามารถเปลี่ยนสถานะหรือระงับบัญชีผู้ดูแลระบบ (Admin) ได้!'
+            }), 400
+
+        current_status = target_user.get('is_active', True)
+        new_status = not current_status
+
+        url_patch = f"{FIREBASE_URL}/users/{user_id}.json"
+        payload = json.dumps({"is_active": new_status}).encode('utf-8')
+        req_patch = urllib.request.Request(
+            url_patch, 
+            data=payload, 
+            headers={'Content-Type': 'application/json'}, 
+            method='PATCH'
+        )
+        
+        with urllib.request.urlopen(req_patch, context=ssl_context) as response:
+            if response.status == 200:
+                status_text = "เปิดใช้งาน" if new_status else "ถูกระงับ"
+                return jsonify({
+                    'status': 'success', 
+                    'message': f'เปลี่ยนสถานะบัญชีเป็น "{status_text}" เรียบร้อยแล้ว'
+                })
+
+        return jsonify({'status': 'error', 'message': 'ไม่สามารถอัปเดตข้อมูลได้'}), 500
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
     
-    success = update_order_status_db(order_id, new_status)
-    if success:
-        return jsonify({'status': 'success', 'message': f'อัปเดตสถานะออเดอร์ #{order_id} สำเร็จ'})
-    return jsonify({'status': 'error', 'message': 'ไม่สามารถอัปเดตข้อมูลบน Firebase ได้'}), 500
+# ==========================================
+# STAFF: MENU MANAGEMENT (แก้ไขปัญหา Method not iterable)
+# ==========================================
 
 @app.route('/staff/menu-manage')
 @staff_required
 def staff_menu_manage():
-    menus = get_all_menus()
+    try:
+        # ดึงข้อมูลรายการเมนูจาก SQLite หรือ Firebase
+        conn = get_db_connection()
+        raw_menus = conn.execute('SELECT * FROM menus').fetchall()
+        conn.close()
+        
+        # แปลงเป็น list ของ dict เพื่อความปลอดภัยในการดึงไปใช้ใน Jinja2
+        menus = [dict(item) for item in raw_menus] if raw_menus else []
+    except Exception as e:
+        menus = []
+        flash(f"เกิดข้อผิดพลาดในการโหลดเมนู: {str(e)}", "error")
+
     return render_template('staff/menu_manage.html', menus=menus)
 
 @app.route('/staff/menu/quick-update/<menu_id>', methods=['POST'])
 @staff_required
 def quick_update_menu(menu_id):
-    data = request.get_json()
+    data = request.get_json() or {}
     update_fields = {}
     
     if 'price' in data and data['price'] is not None:
-        update_fields['price'] = float(data['price'])
+        update_fields['price'] = abs(float(data['price']))
     if 'stock' in data:
         stock_val = data['stock']
-        update_fields['stock'] = int(stock_val) if (stock_val is not None and stock_val != "") else None
+        update_fields['stock'] = abs(int(stock_val)) if (stock_val is not None and stock_val != "") else None
     if 'status' in data:
         update_fields['status'] = data['status']
         
@@ -212,31 +287,29 @@ def quick_update_menu(menu_id):
 @app.route('/api/admin/dashboard_stats')
 @admin_required
 def dashboard_stats():
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    # คำนวณสถิติวันนี้จาก Firebase Realtime Database
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    orders = get_all_orders()
+    
+    sales_today = 0.0
+    customers_today = 0
+    
+    if isinstance(orders, dict):
+        for oid, order in orders.items():
+            if isinstance(order, dict):
+                created_at = order.get('created_at', '')
+                status = order.get('status', '')
+                # กรองออเดอร์เฉพาะของวันนี้และสถานะเสร็จสิ้น/ชำระเงินแล้ว
+                if created_at.startswith(today_str) and status in ['completed', 'paid']:
+                    sales_today += float(order.get('total_amount', 0))
+                    customers_today += int(order.get('customer_count', 0))
 
-    sales_row = cursor.execute('''
-        SELECT SUM(total_amount) AS sales 
-        FROM orders 
-        WHERE DATE(created_at) = DATE('now', 'localtime') AND status = 'completed'
-    ''').fetchone()
-    sales_today = sales_row['sales'] if sales_row and sales_row['sales'] else 0.0
-
-    cust_row = cursor.execute('''
-        SELECT SUM(customer_count) AS cust 
-        FROM orders 
-        WHERE DATE(created_at) = DATE('now', 'localtime') AND status = 'completed'
-    ''').fetchone()
-    customers_today = cust_row['cust'] if cust_row and cust_row['cust'] else 0
-
-    # ดึงจำนวน Staff จาก Firebase
+    # ดึงจำนวน Staff ทั้งหมดจาก Firebase
     all_users = get_all_users()
     active_staff = sum(
         1 for uid, u in all_users.items() 
-        if isinstance(u, dict) and u.get('role') == 'staff' and u.get('is_active')
+        if isinstance(u, dict) and u.get('role') in ['staff', 'admin'] and u.get('is_active', True)
     )
-
-    conn.close()
 
     return jsonify({
         'sales_today': round(sales_today, 2),
@@ -245,7 +318,7 @@ def dashboard_stats():
     })
 
 # ==========================================
-# ADMIN: MENU MANAGEMENT (CRUD)
+# ADMIN: MENU MANAGEMENT (CRUD - SQLite)
 # ==========================================
 
 @app.route('/admin/menu')
@@ -338,7 +411,7 @@ def admin_menu_delete(id):
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # ==========================================
-# ADMIN: STAFF MANAGEMENT (เชื่อมต่อ auth_utils/Firebase)
+# ADMIN: STAFF MANAGEMENT (Firebase)
 # ==========================================
 
 @app.route('/admin/staff')
@@ -346,10 +419,11 @@ def admin_menu_delete(id):
 def admin_staff_list():
     users_dict = get_all_users()
     staff_members = []
-    for uid, user in users_dict.items():
-        if isinstance(user, dict) and user.get('role') != 'customer':
-            user['id'] = uid
-            staff_members.append(user)
+    if isinstance(users_dict, dict):
+        for uid, user in users_dict.items():
+            if isinstance(user, dict) and user.get('role') != 'customer':
+                user['id'] = uid
+                staff_members.append(user)
             
     return render_template('admin/staff.html', staff_members=staff_members)
 
@@ -361,8 +435,14 @@ def admin_staff_add():
         password = request.form['password'].strip()
         role = request.form.get('role', 'staff')
 
-        # ตรวจสอบชื่อผู้ใช้ซ้ำบน Firebase
+        if len(username) < 3 or len(password) < 4:
+            flash("ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร และรหัสผ่าน 4 ตัวอักษร", "error")
+            return redirect(url_for('admin_staff_list'))
+
         users = get_all_users()
+        if not isinstance(users, dict):
+            users = {}
+
         is_duplicate = any(
             info.get('username') == username 
             for uid, info in users.items() if isinstance(info, dict)
@@ -371,9 +451,11 @@ def admin_staff_add():
             flash("ชื่อผู้ใช้นี้มีในระบบแล้ว", "error")
             return redirect(url_for('admin_staff_list'))
 
-        # บันทึกพนักงานลง Firebase ผ่าน auth_utils
-        if create_user(username, password, role):
-            flash("เพิ่มพนักงานเข้าสู่ Firebase สำเร็จ", "success")
+        # เข้ารหัสผ่านก่อนบันทึก
+        hashed_password = generate_password_hash(password)
+
+        if create_user(username, hashed_password, role):
+            flash("เพิ่มพนักงานเข้าสู่ระบบสำเร็จ", "success")
         else:
             flash("เกิดข้อผิดพลาดในการบันทึกพนักงานลง Firebase", "error")
 
@@ -382,30 +464,72 @@ def admin_staff_add():
 
     return redirect(url_for('admin_staff_list'))
 
-@app.route('/admin/staff/edit/<id>', methods=['POST'])
+@app.route('/admin/staff/edit/<user_id>', methods=['POST'])
 @admin_required
-def admin_staff_edit(id):
+def admin_staff_edit(user_id):
     try:
-        # โค้ดสำหรับอัปเดตข้อมูลพนักงาน (หากต้องการเขียนเพิ่มทีหลังสามารถใส่ในส่วนนี้ได้)
+        username = request.form.get('username', '').strip()
+        role = request.form.get('role', 'staff')
+        status_input = request.form.get('is_active', 'true')
+        password = request.form.get('password', '').strip()
+
+        # บังคับว่าถ้าเป็น Admin จะต้องเปิดใช้งาน (True) เสมอ
+        if role == 'admin':
+            is_active = True
+        else:
+            is_active = True if str(status_input).lower() in ['true', 'on', '1'] else False
+
+        # ข้อมูลที่จะส่งไปอัปเดตที่ Firebase
+        update_data = {
+            "role": role,
+            "is_active": is_active
+        }
+
+        # ถ้ามี username ส่งมา ให้ใส่ไว้ในอัปเดต
+        if username:
+            update_data["username"] = username
+
+        # ถ้ามีการกรอกรหัสผ่านใหม่ ให้เข้ารหัสก่อนอัปเดตลง Firebase
+        if password:
+            update_data["password"] = generate_password_hash(password)
+
+        # ส่ง PATCH Request อัปเดตข้อมูลบน Firebase Realtime Database
+        url = f"{FIREBASE_URL}/users/{user_id}.json"
+        payload = json.dumps(update_data).encode('utf-8')
+        req = urllib.request.Request(
+            url, 
+            data=payload, 
+            headers={'Content-Type': 'application/json'}, 
+            method='PATCH'
+        )
         
-        flash("อัปเดตข้อมูลพนักงานสำเร็จ", "success")
+        with urllib.request.urlopen(req, context=ssl_context) as response:
+            if response.status == 200:
+                flash("อัปเดตข้อมูลพนักงานสำเร็จ", "success")
+                return redirect(url_for('admin_staff_list'))
+                
+        flash("ไม่สามารถอัปเดตข้อมูลไปยัง Firebase ได้", "error")
+
     except Exception as e:
         flash(f"เกิดข้อผิดพลาด: {str(e)}", "error")
-        
+
     return redirect(url_for('admin_staff_list'))
 
 @app.route('/admin/staff/delete/<id>', methods=['POST'])
 @admin_required
 def admin_staff_delete(id):
     try:
-        # โค้ดสำหรับลบพนักงาน (หากต้องการเขียนเพิ่มทีหลังสามารถใส่ในส่วนนี้ได้)
-        
-        return jsonify({'status': 'success', 'message': 'ลบพนักงานเรียบร้อยแล้ว'})
+        url = f"{FIREBASE_URL}/users/{id}.json"
+        req = urllib.request.Request(url, method='DELETE')
+        with urllib.request.urlopen(req, context=ssl_context) as response:
+            if response.status == 200:
+                return jsonify({'status': 'success', 'message': 'ลบพนักงานเรียบร้อยแล้ว'})
+            return jsonify({'status': 'error', 'message': 'เกิดข้อผิดพลาดในการลบ'}), 500
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # ==========================================
-# ADMIN: PAYMENT CHANNELS MANAGEMENT
+# ADMIN: PAYMENT CHANNELS MANAGEMENT (SQLite)
 # ==========================================
 
 @app.route('/admin/payments')
@@ -524,20 +648,15 @@ def admin_sales_void(id):
 
 @app.route('/customer')
 def customer_dashboard():
-    # ตรวจสอบสิทธิ์ว่าต้องเป็น customer เท่านั้น
     if session.get('role') != 'customer':
         flash("หน้านี้สำหรับลูกค้าเท่านั้น", "error")
         return redirect(url_for('home'))
     
     conn = get_db_connection()
-    # ดึงเฉพาะเมนูที่สถานะ available (พร้อมขาย) มาแสดง
     menus = conn.execute("SELECT * FROM menus WHERE status = 'available'").fetchall()
-    
-    # ดึงช่องทางการชำระเงินที่เปิดใช้งานมาแสดง
     payments = conn.execute("SELECT * FROM payment_channels WHERE is_active = 1").fetchall()
     conn.close()
     
-    # แก้ไข path จาก 'customer/dashboard.html' เป็น 'customer/customer.html'
     return render_template('customer/customer.html', menus=menus, payments=payments)
 
 @app.route('/customer/checkout', methods=['POST'])
@@ -545,18 +664,29 @@ def customer_checkout():
     if session.get('role') != 'customer':
         return jsonify({'status': 'error', 'message': 'ไม่มีสิทธิ์เข้าถึง'}), 403
 
-    data = request.get_json()
-    total_amount = float(data.get('total_amount', 0))
+    data = request.get_json() or {}
+    
+    # --- ดักจับและแปลงค่า total_amount ให้ปลอดภัย ---
+    raw_total = data.get('total_amount')
+    try:
+        total_amount = float(raw_total) if raw_total is not None else 0.0
+    except (ValueError, TypeError):
+        total_amount = 0.0
+
+    # --- ดักจับ customer_count กรณีเป็น None หรือไม่ใช่ตัวเลข ---
+    raw_count = data.get('customer_count')
+    try:
+        customer_count = int(raw_count) if raw_count is not None else 1
+    except (ValueError, TypeError):
+        customer_count = 1
+
     payment_method = data.get('payment_method', 'เงินสด')
-    customer_count = int(data.get('customer_count', 1))
     items = data.get('items', []) 
 
     if not items:
         return jsonify({'status': 'error', 'message': 'ไม่มีสินค้าในตะกร้า'}), 400
 
     try:
-        # --- เปลี่ยนมาบันทึกลง Firebase แทน SQLite และเก็บ items (หัวข้อ 1, 4, 5) ---
-        FIREBASE_URL = "https://webapplication-e7922-default-rtdb.asia-southeast1.firebasedatabase.app"
         url = f"{FIREBASE_URL}/orders.json"
         
         payload = {
@@ -564,17 +694,22 @@ def customer_checkout():
             "total_amount": total_amount,
             "payment_method": payment_method,
             "status": "pending",
-            "items": items, # บันทึกรายการอาหารด้วย
+            "items": items,
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
         req_data = json.dumps(payload).encode('utf-8')
-        req = urllib.request.Request(url, data=req_data, headers={'Content-Type': 'application/json'}, method='POST')
+        req = urllib.request.Request(
+            url, 
+            data=req_data, 
+            headers={'Content-Type': 'application/json'}, 
+            method='POST'
+        )
         
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, context=ssl_context) as response:
             if response.status in [200, 201]:
                 res_data = json.loads(response.read().decode('utf-8'))
-                order_id = res_data.get('name') # Firebase จะสร้าง ID คืนมาให้ในคีย์ 'name'
+                order_id = res_data.get('name')
                 
                 return jsonify({
                     'status': 'success', 
@@ -582,36 +717,8 @@ def customer_checkout():
                     'order_id': order_id
                 })
             else:
-                raise Exception("Firebase Error")
+                raise Exception("Firebase Response Error")
 
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # 1. สร้างบิลออเดอร์ใหม่ (สถานะ pending = รอดำเนินการ)
-        cursor.execute('''
-            INSERT INTO orders (customer_count, total_amount, payment_method, status, created_at)
-            VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
-        ''', (customer_count, total_amount, payment_method))
-        
-        order_id = cursor.lastrowid # ดึงเลข ID ออเดอร์ล่าสุดที่เพิ่งสร้าง
-        
-        # (ทางเลือก) หากคุณมีตาราง order_items สำหรับเก็บรายละเอียดว่าสั่งเมนูอะไรบ้าง สามารถวนลูป Insert ตรงนี้ได้
-        # for item in items:
-        #     cursor.execute('INSERT INTO order_items (order_id, menu_id, qty, price) VALUES (?, ?, ?, ?)', 
-        #                    (order_id, item['id'], item['qty'], item['price']))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({
-            'status': 'success', 
-            'message': 'สั่งอาหารสำเร็จ! กรุณารอสักครู่', 
-            'order_id': order_id
-        })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 

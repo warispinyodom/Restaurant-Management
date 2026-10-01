@@ -17,52 +17,68 @@
                 <thead class="bg-light">
                     <tr>
                         <th class="ps-4">ชื่อผู้ใช้</th>
-                        <th>ตำแหน่ง</th>
-                        <th>สถานะ</th>
-                        <th class="text-end pe-4" style="width: 170px;">จัดการ</th>
+                        <th class="text-center">ตำแหน่ง</th>
+                        <th class="text-center">สถานะ</th>
+                        <th class="text-end pe-4" style="width: 180px;">จัดการ</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for staff in staff_members %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px;">
-                                    <i class="fas fa-user"></i>
+                    {% if staff_members %}
+                        {% for user in staff_members %}
+                        <tr>
+                            <!-- ชื่อผู้ใช้งาน -->
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px;">
+                                        👤
+                                    </div>
+                                    <span class="fw-bold text-dark">{{ user.username }}</span>
                                 </div>
-                                <span class="fw-bold text-dark">{{ staff.username }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            {% if staff.role == 'admin' %}
-                                <span class="badge bg-dark text-white px-2 py-1"><i class="fas fa-shield-halved me-1"></i>แอดมิน</span>
-                            {% else %}
-                                <span class="badge bg-info-subtle text-info-emphasis border border-info px-2 py-1"><i class="fas fa-user-tag me-1"></i>พนักงานทั่วไป</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if staff.status == 'active' %}
-                                <span class="badge bg-success-subtle text-success border border-success px-2 py-1">ใช้งาน</span>
-                            {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2 py-1">ระงับ</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="d-inline-flex gap-1">
-                                <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold px-2 py-1 d-inline-flex align-items-center text-nowrap" data-bs-toggle="modal" data-bs-target="#editStaffModal{{ staff.id }}">
-                                    <i class="fas fa-user-pen me-1"></i> แก้ไข
-                                </button>
-                                <button type="button" class="btn btn-sm btn-danger fw-semibold px-2 py-1 d-inline-flex align-items-center text-nowrap" onclick="deleteItem('/admin/staff/delete/{{ staff.id }}')">
-                                    <i class="fas fa-trash-can me-1"></i> ลบ
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    {% if not staff_members %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">ยังไม่มีข้อมูลพนักงาน</td>
-                    </tr>
+                            </td>
+
+                            <!-- ตำแหน่ง -->
+                            <td class="text-center">
+                                {% if user.role == 'admin' %}
+                                    <span class="badge bg-dark text-white rounded-pill px-3 py-2 fw-semibold">🛡️ แอดมิน</span>
+                                {% else %}
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle rounded-pill px-3 py-2 fw-semibold">👤 พนักงานทั่วไป</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- สถานะ -->
+                            <td class="text-center">
+                                {% if user.role == 'admin' or user.is_active == true or user.is_active == 'true' or user.is_active is undefined %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-3 py-2 fw-semibold">ใช้งานอยู่</span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill px-3 py-2 fw-semibold">ระงับ</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- จัดการ -->
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" 
+                                            class="btn btn-warning btn-sm text-white fw-bold px-3 rounded-2 shadow-sm"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editStaffModal{{ user.id }}">
+                                        ✏️ แก้ไข
+                                    </button>
+                                    
+                                    {% if user.role != 'admin' %}
+                                    <button type="button" 
+                                            class="btn btn-danger btn-sm fw-bold px-3 rounded-2 shadow-sm"
+                                            onclick="deleteStaff('{{ user.id }}', '{{ user.role }}', '{{ user.username }}')">
+                                        🗑️ ลบ
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">ไม่พบข้อมูลพนักงาน</td>
+                        </tr>
                     {% endif %}
                 </tbody>
             </table>
@@ -74,7 +90,7 @@
 {% for staff in staff_members %}
 <div class="modal fade" id="editStaffModal{{ staff.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <form action="{{ url_for('admin_staff_edit', id=staff.id) }}" method="POST" class="modal-content border-0 shadow">
+        <form action="{{ url_for('admin_staff_edit', user_id=staff.id) }}" method="POST" class="modal-content border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">แก้ไขข้อมูล: {{ staff.username }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -88,15 +104,20 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">สถานะบัญชี</label>
-                    <select name="status" class="form-select">
-                        <option value="active" {% if staff.status == 'active' %}selected{% endif %}>ใช้งาน</option>
-                        <option value="inactive" {% if staff.status == 'inactive' %}selected{% endif %}>ระงับ</option>
+                    <label class="form-label small fw-bold">สถานะการใช้งาน</label>
+                    <select name="is_active" class="form-select">
+                        <option value="true" {% if staff.is_active == true or staff.is_active == 'true' or staff.is_active is undefined %}selected{% endif %}>
+                            ใช้งานอยู่ (Active)
+                        </option>
+                        <option value="false" {% if staff.is_active == false or staff.is_active == 'false' %}selected{% endif %} {% if staff.role == 'admin' %}disabled{% endif %}>
+                            ระงับการใช้งาน (Suspended)
+                        </option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">รหัสผ่านใหม่</label>
-                    <input type="password" name="password" class="form-control" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
+                    <input type="password" name="password" class="form-control"
+                        placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0">
@@ -144,15 +165,30 @@
 
 {% block scripts %}
 <script>
-function deleteItem(url) {
-    if(confirm('ต้องการลบพนักงานรายนี้ใช่หรือไม่?')) {
-        fetch(url, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'success') location.reload();
-            else alert('Error: ' + data.message);
-        });
+    function deleteStaff(userId, role, username) {
+        if (role === 'admin') {
+            showNotification('error', 'ไม่สามารถดำเนินการได้', 'ไม่สามารถลบบัญชีผู้ดูแลระบบ (Admin) ได้');
+            return;
+        }
+
+        confirmAction(
+            'ยืนยันการลบพนักงาน?',
+            `คุณแน่ใจหรือไม่ว่าต้องการลบพนักงาน "${username}" ออกจากระบบ?`,
+            function () {
+                fetch(`/admin/staff/delete/${userId}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showNotification('success', 'ลบข้อมูลสำเร็จ', data.message).then(() => location.reload());
+                        } else {
+                            showNotification('error', 'เกิดข้อผิดพลาด', data.message);
+                        }
+                    });
+            },
+            'warning',
+            'ลบข้อมูล',
+            'ยกเลิก'
+        );
     }
-}
 </script>
 {% endblock %}

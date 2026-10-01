@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurant POS System</title>
-    
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome 6 -->
@@ -147,6 +147,7 @@
         .sidebar::-webkit-scrollbar {
             width: 4px;
         }
+
         .sidebar::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.15);
             border-radius: 10px;
@@ -160,15 +161,17 @@
         <span class="navbar-brand fw-bold d-flex align-items-center gap-2 mb-0">
             <i class="fas fa-utensils text-warning"></i> POS System
         </span>
-        <button class="navbar-toggler border-0 shadow-none px-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+        <button class="navbar-toggler border-0 shadow-none px-2" type="button" data-bs-toggle="offcanvas"
+            data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </nav>
 
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <div class="offcanvas-md offcanvas-start sidebar text-white p-3 d-flex flex-column" id="sidebarMenu" tabindex="-1">
-            
+        <div class="offcanvas-md offcanvas-start sidebar text-white p-3 d-flex flex-column" id="sidebarMenu"
+            tabindex="-1">
+
             <!-- Header โลโก้ -->
             <div class="d-flex align-items-center justify-content-between mb-3 px-1 pt-1">
                 <a href="{{ url_for('home') }}" class="d-flex align-items-center gap-2 text-white text-decoration-none">
@@ -178,7 +181,8 @@
                     <h5 class="fw-bold m-0 text-white">POS System</h5>
                 </a>
                 <!-- ปุ่มปิดเมนูบนจอมือถือ -->
-                <button type="button" class="btn-close btn-close-white d-md-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white d-md-none" data-bs-dismiss="offcanvas"
+                    data-bs-target="#sidebarMenu" aria-label="Close"></button>
             </div>
 
             <hr class="border-secondary opacity-25 my-2">
@@ -186,12 +190,15 @@
             <!-- Profile Info (แสดงเฉพาะผู้ที่เข้าสู่ระบบแล้ว) -->
             {% if session.get('username') %}
             <div class="user-profile-box d-flex align-items-center gap-2.5">
-                <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; min-width: 36px;">
+                <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                    style="width: 36px; height: 36px; min-width: 36px;">
                     {{ session.get('username')[0] | upper }}
                 </div>
                 <div class="overflow-hidden">
                     <div class="fw-semibold text-white text-truncate small">{{ session.get('username') }}</div>
-                    <span class="badge bg-{{ 'danger' if session.get('role') == 'admin' else ('info' if session.get('role') == 'staff' else 'success') }}-subtle text-{{ 'danger' if session.get('role') == 'admin' else ('info' if session.get('role') == 'staff' else 'success') }} rounded-pill px-2 py-0.5" style="font-size: 0.675rem;">
+                    <span
+                        class="badge bg-{{ 'danger' if session.get('role') == 'admin' else ('info' if session.get('role') == 'staff' else 'success') }}-subtle text-{{ 'danger' if session.get('role') == 'admin' else ('info' if session.get('role') == 'staff' else 'success') }} rounded-pill px-2 py-0.5"
+                        style="font-size: 0.675rem;">
                         {{ session.get('role') | upper }}
                     </span>
                 </div>
@@ -203,59 +210,69 @@
 
                 <!-- 1. ADMIN MENU -->
                 {% if session.get('role') == 'admin' %}
-                    <div class="menu-section-label">ผู้ดูแลระบบ (Admin)</div>
-                    
-                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'admin_dashboard' }}">
-                        <i class="fas fa-chart-pie text-info"></i> <span>Dashboard</span>
-                    </a>
-                    
-                    <a href="{{ url_for('admin_menu_list') }}" class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_menu') }}">
-                        <i class="fas fa-hamburger text-warning"></i> <span>จัดการเมนูอาหาร</span>
-                    </a>
-                    
-                    <a href="{{ url_for('admin_staff_list') }}" class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_staff') }}">
-                        <i class="fas fa-users text-primary"></i> <span>จัดการพนักงาน</span>
-                    </a>
-                    
-                    <a href="{{ url_for('admin_payments_list') }}" class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_payments') }}">
-                        <i class="fas fa-qrcode text-success"></i> <span>ช่องทางชำระเงิน</span>
-                    </a>
+                <div class="menu-section-label">ผู้ดูแลระบบ (Admin)</div>
 
-                    <a href="{{ url_for('admin_sales_history') }}" class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_sales') }}">
-                        <i class="fas fa-receipt text-light"></i> <span>ประวัติการขาย</span>
-                    </a>
+                <a href="{{ url_for('admin_dashboard') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint == 'admin_dashboard' }}">
+                    <i class="fas fa-chart-pie text-info"></i> <span>Dashboard</span>
+                </a>
+
+                <a href="{{ url_for('admin_menu_list') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_menu') }}">
+                    <i class="fas fa-hamburger text-warning"></i> <span>จัดการเมนูอาหาร</span>
+                </a>
+
+                <a href="{{ url_for('admin_staff_list') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_staff') }}">
+                    <i class="fas fa-users text-primary"></i> <span>จัดการพนักงาน</span>
+                </a>
+
+                <a href="{{ url_for('admin_payments_list') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_payments') }}">
+                    <i class="fas fa-qrcode text-success"></i> <span>ช่องทางชำระเงิน</span>
+                </a>
+
+                <a href="{{ url_for('admin_sales_history') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint and request.endpoint.startswith('admin_sales') }}">
+                    <i class="fas fa-receipt text-light"></i> <span>ประวัติการขาย</span>
+                </a>
 
                 <!-- 2. STAFF MENU -->
                 {% elif session.get('role') == 'staff' %}
-                    <div class="menu-section-label">พนักงาน (Staff Operations)</div>
-                    
-                    <a href="{{ url_for('staff_orders') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'staff_orders' }}">
-                        <i class="fas fa-utensils text-warning"></i> <span>รายการออเดอร์หน้าร้าน</span>
-                    </a>
-                    
-                    <a href="{{ url_for('staff_menu_manage') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'staff_menu_manage' }}">
-                        <i class="fas fa-edit text-info"></i> <span>ปรับสถานะ/สต็อกเมนู</span>
-                    </a>
+                <div class="menu-section-label">พนักงาน (Staff Operations)</div>
+
+                <a href="{{ url_for('staff_orders') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint == 'staff_orders' }}">
+                    <i class="fas fa-utensils text-warning"></i> <span>รายการออเดอร์หน้าร้าน</span>
+                </a>
+
+                <a href="{{ url_for('staff_menu_manage') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint == 'staff_menu_manage' }}">
+                    <i class="fas fa-edit text-info"></i> <span>ปรับสถานะ/สต็อกเมนู</span>
+                </a>
 
                 <!-- 3. CUSTOMER MENU -->
                 {% elif session.get('role') == 'customer' %}
-                    <div class="menu-section-label">ส่วนของลูกค้า (Customer)</div>
-                    
-                    <a href="{{ url_for('customer_dashboard') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'customer_dashboard' }}">
-                        <i class="fas fa-store text-success"></i> <span>หน้าหลัก / สั่งอาหาร</span>
-                    </a>
+                <div class="menu-section-label">ส่วนของลูกค้า (Customer)</div>
+
+                <a href="{{ url_for('customer_dashboard') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint == 'customer_dashboard' }}">
+                    <i class="fas fa-store text-success"></i> <span>หน้าหลัก / สั่งอาหาร</span>
+                </a>
 
                 <!-- 4. GUEST MENU (ยังไม่ได้เข้าสู่ระบบ) -->
                 {% else %}
-                    <div class="menu-section-label">เข้าสู่ระบบ</div>
-                    
-                    <a href="{{ url_for('signin') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'signin' }}">
-                        <i class="fas fa-right-to-bracket text-primary"></i> <span>เข้าสู่ระบบ</span>
-                    </a>
-                    
-                    <a href="{{ url_for('signup') }}" class="nav-link-custom {{ 'active' if request.endpoint == 'signup' }}">
-                        <i class="fas fa-user-plus text-success"></i> <span>สมัครสมาชิก</span>
-                    </a>
+                <div class="menu-section-label">เข้าสู่ระบบ</div>
+
+                <a href="{{ url_for('signin') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint == 'signin' }}">
+                    <i class="fas fa-right-to-bracket text-primary"></i> <span>เข้าสู่ระบบ</span>
+                </a>
+
+                <a href="{{ url_for('signup') }}"
+                    class="nav-link-custom {{ 'active' if request.endpoint == 'signup' }}">
+                    <i class="fas fa-user-plus text-success"></i> <span>สมัครสมาชิก</span>
+                </a>
                 {% endif %}
 
             </div>
@@ -275,15 +292,17 @@
         <div class="main-content p-3 p-md-4">
             <!-- Alert แจ้งเตือน -->
             {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
-                            <i class="fas {{ 'fa-check-circle text-success' if category == 'success' else 'fa-exclamation-circle text-danger' }} me-2 fs-5 align-middle"></i>
-                            <span class="align-middle fw-medium">{{ message }}</span>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4"
+                role="alert">
+                <i
+                    class="fas {{ 'fa-check-circle text-success' if category == 'success' else 'fa-exclamation-circle text-danger' }} me-2 fs-5 align-middle"></i>
+                <span class="align-middle fw-medium">{{ message }}</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
             {% endwith %}
 
             <!-- Dynamic Page Content -->
@@ -295,7 +314,40 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // 1. ฟังก์ชันแสดงการแจ้งเตือน (Alert Replacement)
+        function showNotification(icon, title, text = '') {
+            return Swal.fire({
+                icon: icon, // 'success', 'error', 'warning', 'info'
+                title: title,
+                text: text,
+                confirmButtonColor: '#2563eb'
+            });
+        }
+
+        // 2. ฟังก์ชันยืนยันการทำรายการ Sensitive (Confirm Replacement)
+        function confirmAction(title, text, onConfirmCallback, icon = 'warning', confirmText = 'ยืนยัน', cancelText = 'ยกเลิก') {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: confirmText,
+                cancelButtonText: cancelText
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    onConfirmCallback();
+                }
+            });
+        }
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 

@@ -29,7 +29,7 @@
                             <div class="text-muted small mb-2">หมวดหมู่: {{ menu['category'] }}</div>
 
                             <div class="mt-auto d-flex justify-content-between align-items-center">
-                                <span class="fw-bold fs-5 text-primary">฿{{ "{:,.0f}".format(menu['price']) }}</span>
+                                <span class="fw-bold fs-5 text-primary">฿{{ "{:,.0f}".format(menu['price']|abs) }}</span>
                                 <button class="btn btn-primary btn-sm rounded-circle shadow-sm"
                                     data-id="{{ menu['id'] }}" data-name="{{ menu['name'] }}"
                                     data-price="{{ menu['price'] }}"
@@ -105,44 +105,56 @@
 
 {% block scripts %}
 <script>
+    // 1. ตัวแปรเก็บรายการสินค้าในตะกร้า
     let cart = [];
 
-    // เพิ่มสินค้าลงตะกร้า
+    // 2. ฟังก์ชันเพิ่มสินค้าลงตะกร้า
     function addToCart(id, name, price) {
-        const existingItem = cart.find(item => item.id === id);
+        let cleanPrice = Math.abs(parseFloat(price)) || 0;
+        let existingItem = cart.find(item => item.id == id);
+
         if (existingItem) {
             existingItem.qty += 1;
         } else {
-            cart.push({ id: id, name: name, price: price, qty: 1 });
+            cart.push({
+                id: id,
+                name: name,
+                price: cleanPrice,
+                qty: 1
+            });
         }
+
         updateCartUI();
     }
 
-    // ลดจำนวนสินค้า
-    function decreaseQty(id) {
-        const itemIndex = cart.findIndex(item => item.id === id);
+    // 3. ฟังก์ชันปรับเปลี่ยนจำนวนสินค้า (+ / -)
+    function changeQty(id, change) {
+        let itemIndex = cart.findIndex(item => item.id == id);
         if (itemIndex !== -1) {
-            cart[itemIndex].qty -= 1;
+            cart[itemIndex].qty += change;
             if (cart[itemIndex].qty <= 0) {
-                cart.splice(itemIndex, 1);
+                cart.splice(itemIndex, 1); // ลบออกจากตะกร้าถ้าเหลือ 0
             }
+            updateCartUI();
         }
-        updateCartUI();
     }
 
-    // อัปเดตหน้าตาตะกร้า
+    // 4. ฟังก์ชันวาดรายการสินค้าในตะกร้าและคำนวณราคารวม
     function updateCartUI() {
         const cartItemsContainer = document.getElementById('cart-items');
-        const emptyMsg = document.getElementById('empty-cart-msg');
         const totalElement = document.getElementById('cart-total');
         const btnCheckout = document.getElementById('btn-checkout');
 
-        // ล้างรายการเก่าออก (ยกเว้นกล่องข้อความว่างเปล่า)
+        if (!cartItemsContainer || !totalElement || !btnCheckout) return;
+
         cartItemsContainer.innerHTML = '';
 
         if (cart.length === 0) {
-            cartItemsContainer.innerHTML = `<li class="list-group-item text-center text-muted py-4" id="empty-cart-msg">
-                <i class="fas fa-basket-shopping fs-2 opacity-25 mb-2 d-block"></i>ตะกร้าว่างเปล่า</li>`;
+            cartItemsContainer.innerHTML = `
+                <li class="list-group-item text-center text-muted py-4" id="empty-cart-msg">
+                    <i class="fas fa-basket-shopping fs-2 opacity-25 mb-2 d-block"></i>
+                    ตะกร้าว่างเปล่า
+                </li>`;
             totalElement.innerText = '฿0.00';
             btnCheckout.disabled = true;
             return;
@@ -163,9 +175,15 @@
                     <div class="text-muted" style="font-size: 0.75rem;">฿${item.price.toFixed(2)}</div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-outline-secondary btn-sm p-0" style="width: 24px; height: 24px;" onclick="decreaseQty(${item.id})"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm p-0 d-flex align-items-center justify-content-center" 
+                        style="width: 24px; height: 24px;" onclick="changeQty('${item.id}', -1)">
+                        <i class="fas fa-minus" style="font-size: 10px;"></i>
+                    </button>
                     <span class="fw-bold small" style="min-width: 15px; text-align: center;">${item.qty}</span>
-                    <button class="btn btn-outline-primary btn-sm p-0" style="width: 24px; height: 24px;" onclick="addToCart(${item.id}, '${item.name}', ${item.price})"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
+                    <button type="button" class="btn btn-outline-primary btn-sm p-0 d-flex align-items-center justify-content-center" 
+                        style="width: 24px; height: 24px;" onclick="changeQty('${item.id}', 1)">
+                        <i class="fas fa-plus" style="font-size: 10px;"></i>
+                    </button>
                 </div>
             `;
             cartItemsContainer.appendChild(li);
@@ -174,13 +192,13 @@
         totalElement.innerText = `฿${totalAmount.toFixed(2)}`;
     }
 
-    // ยืนยันการสั่งซื้อส่งไปที่ Backend
+    // 5. ฟังก์ชันส่งข้อมูลการสั่งซื้อไปยัง Backend
     function checkout() {
         if (cart.length === 0) return;
 
         const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        const customerCount = document.getElementById('customer-count').value;
-        const paymentMethod = document.getElementById('payment-method').value;
+        const customerCount = document.getElementById('customer-count')?.value || 1;
+        const paymentMethod = document.getElementById('payment-method')?.value || 'เงินสด';
 
         const payload = {
             items: cart,
@@ -198,24 +216,24 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert(data.message + ` (หมายเลขออเดอร์: #${data.order_id})`);
-                    cart = []; // เคลียร์ตะกร้า
-                    updateCartUI();
-                } else {
-                    alert('เกิดข้อผิดพลาด: ' + data.message);
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
-            })
-            .finally(() => {
-                btnCheckout.disabled = false;
-                btnCheckout.innerHTML = 'ยืนยันการสั่งซื้อ';
-            });
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert((data.message || 'สั่งอาหารสำเร็จ!') + ` (หมายเลขออเดอร์: #${data.order_id})`);
+                cart = []; // เคลียร์ตะกร้า
+                updateCartUI();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถทำรายการได้'));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+        })
+        .finally(() => {
+            btnCheckout.disabled = false;
+            btnCheckout.innerHTML = 'ยืนยันการสั่งซื้อ';
+        });
     }
 </script>
 {% endblock %}

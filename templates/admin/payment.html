@@ -92,16 +92,54 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- นำเข้า SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 function deleteItem(url) {
-    if(confirm('ต้องการลบช่องทางชำระเงินนี้ใช่หรือไม่?')) {
-        fetch(url, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'success') location.reload();
-            else alert('Error: ' + data.message);
-        });
-    }
+    Swal.fire({
+        title: 'ยืนยันการลบ?',
+        text: 'คุณต้องการลบช่องทางชำระเงินนี้ใช่หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(url, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire({
+                        title: 'ลบเรียบร้อย!',
+                        text: data.message || 'ลบช่องทางชำระเงินสำเร็จ',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: data.message || 'ไม่สามารถลบช่องทางชำระเงินได้',
+                        icon: 'error'
+                    });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                    icon: 'error'
+                });
+            });
+        }
+    });
 }
 </script>
 {% endblock %}

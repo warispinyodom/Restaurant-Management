@@ -1,28 +1,36 @@
 import json
 import urllib.request
 import urllib.error
+import ssl
 from werkzeug.security import check_password_hash
 
 # URL ฐานข้อมูล Firebase Realtime Database
 FIREBASE_URL = "https://webapplication-e7922-default-rtdb.asia-southeast1.firebasedatabase.app"
 
-# 1. ดึงข้อมูลผู้ใช้ทั้งหมด
+# สร้าง SSL Context รองรับการเชื่อมต่อ REST API ป้องกัน SSL Certificate Error
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+
 def get_all_users():
-    """ดึงข้อมูลผู้ใช้จาก Firebase REST API"""
+    """ดึงข้อมูลผู้ใช้ทั้งหมดจาก Firebase REST API"""
     url = f"{FIREBASE_URL}/users.json"
     try:
-        req = urllib.request.Request(url, method='GET')
-        with urllib.request.urlopen(req) as response:
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0'}, 
+            method='GET'
+        )
+        with urllib.request.urlopen(req, context=ssl_context, timeout=10) as response:
             if response.status == 200:
                 data = response.read().decode('utf-8')
                 parsed_data = json.loads(data)
-                return parsed_data if parsed_data else {}
+                return parsed_data if isinstance(parsed_data, dict) else {}
     except Exception as e:
         print(f"System Error (get_all_users): {e}")
         return {}
     return {}
 
-# 2. เพิ่มผู้ใช้ใหม่
 def create_user(username, password, role):
     """บันทึกข้อมูลผู้ใช้ใหม่ลง Firebase"""
     url = f"{FIREBASE_URL}/users.json"
@@ -37,10 +45,13 @@ def create_user(username, password, role):
         req = urllib.request.Request(
             url, 
             data=data, 
-            headers={'Content-Type': 'application/json'}, 
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0'
+            }, 
             method='POST'
         )
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, context=ssl_context, timeout=10) as response:
             if response.status in [200, 201]:
                 return True
     except Exception as e:
@@ -48,7 +59,6 @@ def create_user(username, password, role):
         return False
     return False
 
-# 3. ตรวจสอบความถูกต้องของข้อมูลสมัครสมาชิก
 def validate_registration(username, password, role):
     if not isinstance(username, str) or not isinstance(password, str):
         return False, "ข้อมูลต้องเป็นตัวอักษร"
@@ -58,24 +68,28 @@ def validate_registration(username, password, role):
         return False, "สิทธิ์ผู้ใช้งานไม่ถูกต้องตามระบบ"
     return True, "ข้อมูลถูกต้อง"
 
-# 4. ตรวจสอบสิทธิ์การใช้งาน
 def validate_role(role):
     valid_roles = ["admin", "staff", "customer"]
     return role in valid_roles
 
-# 5. ตรวจสอบการ Login
 def check_credentials(username, password):
     users = get_all_users()
+    if not isinstance(users, dict):
+        return False, None
+
     for uid, info in users.items():
-        if isinstance(info, dict):
+        if isinstance(info, dict) and info.get('username') == username:
             stored_password = info.get('password')
+            if not stored_password:
+                continue
             
-            # ตรวจสอบว่าเป็นรหัสผ่านที่ Hash ไว้หรือไม่ (เผื่อรหัสผ่านเก่าที่ยังไม่ Hash)
-            if stored_password and stored_password.startswith('scrypt:'):
+            # รองรับทั้งรหัสผ่านที่ Hashed (scrypt/pbkdf2) และแบบ Plain-text
+            is_match = False
+            try:
                 is_match = check_password_hash(stored_password, password)
-            else:
+            except Exception:
                 is_match = (stored_password == password)
 
-            if info.get('username') == username and is_match:
+            if is_match:
                 return True, info
     return False, None

@@ -1,0 +1,112 @@
+{
+  "users": {
+    "usr_admin01": {
+      "username": "admin01",
+      "password": "scrypt:32768:8:1$E8PxqDbqpDt4G8nL$d0783a548e308bf2dd94e9cdccaecdc75d66d9863f7847127fdc4d582e9f52ebf397e707f84d81404f169e670ea0e1c0aacee6071d15b9d110e917829b48a5c7",
+      "role": "admin",
+      "is_active": true
+    },
+    "usr_staff01": {
+      "username": "staff01",
+      "password": "scrypt:32768:8:1$a1Mo4db6XPp3MPyE$21a00dd9275dc726ee65974f328aedb724355a01666a74d1ca63617d215ed282846c9997defbbc91940ffe38605343969718b340663b238fe558b1fa8b875c21",
+      "role": "staff",
+      "is_active": true
+    },
+    "usr_staff02": {
+      "username": "staff02",
+      "password": "scrypt:32768:8:1$a1Mo4db6XPp3MPyE$21a00dd9275dc726ee65974f328aedb724355a01666a74d1ca63617d215ed282846c9997defbbc91940ffe38605343969718b340663b238fe558b1fa8b875c21",
+      "role": "staff",
+      "is_active": false
+    },
+    "usr_user01": {
+      "username": "user01",
+      "password": "scrypt:32768:8:1$RijKne4Vnl7WKAoi$6532e96415982da2687d5e58d6e5f4bc8e4913aeaa0ae33ac72faf65ed527e6fabb23c107e3649d954c29b6c49ec0c5afd74eefccdc869d89ea2bedc2244f710",
+      "role": "customer",
+      "is_active": true
+    }
+  },
+  "categories": {
+    "cat_01": {
+      "display_order": 1,
+      "name": "อาหารจานหลัก"
+    },
+    "cat_02": {
+      "display_order": 2,
+      "name": "ยำ / ทานเล่น"
+    },
+    "cat_03": {
+      "display_order": 3,
+      "name": "เครื่องดื่ม"
+    }
+  },
+  "menu_items": {
+    "menu_01": {
+      "category_id": "cat_01",
+      "image_url": "https://images.unsplash.com/photo-1612874742237-6526221588e3",
+      "is_available": true,
+      "name": "สปาเก็ตตี้คาโบนาร่า",
+      "price": 150.0,
+      "stock": 20
+    },
+    "menu_02": {
+      "category_id": "cat_02",
+      "image_url": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
+      "is_available": true,
+      "name": "ยำวุ้นเส้นหมูสับ",
+      "price": 80.0,
+      "stock": 15
+    },
+    "menu_03": {
+      "category_id": "cat_03",
+      "image_url": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd",
+      "is_available": true,
+      "name": "ชาไทยเย็น",
+      "price": 45.0,
+      "stock": 50
+    }
+  },
+  "orders": {
+    "ord_1001": {
+      "created_at": "2026-10-01 10:30:00",
+      "customer_count": 2,
+      "items": [
+        {
+          "id": 1,
+          "name": "สปาเก็ตตี้คาโบนาร่า",
+          "price": 150.0,
+          "quantity": 2,
+          "size": "ปกติ",
+          "spice_level": "ไม่เผ็ด"
+        },
+        {
+          "id": 3,
+          "name": "ชาไทยเย็น",
+          "price": 45.0,
+          "quantity": 2,
+          "size": "ปกติ",
+          "spice_level": "ไม่เผ็ด"
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "completed",
+      "total_amount": 390.0
+    },
+    "ord_1002": {
+      "created_at": "2026-10-01 11:15:20",
+      "customer_count": 1,
+      "items": [
+        {
+          "id": 2,
+          "name": "ยำวุ้นเส้นหมูสับ",
+          "price": 80.0,
+          "quantity": 1,
+          "size": "ปกติ",
+          "spice_level": "เผ็ดมาก"
+        }
+      ],
+      "payment_method": "โอนเงิน / QR Code",
+      "status": "pending",
+      "total_amount": 80.0
+    }
+  }
+}
