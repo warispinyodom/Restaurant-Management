@@ -137,6 +137,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     let cart = [];
 
@@ -264,16 +265,38 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                alert((data.message || 'สั่งอาหารสำเร็จ!') + ` (หมายเลขออเดอร์: #${data.order_id})`);
-                cart = [];
-                updateCartUI();
+                // ใช้ SweetAlert แสดงผลสำเร็จ
+                Swal.fire({
+                    title: 'สั่งอาหารสำเร็จ!',
+                    text: `หมายเลขออเดอร์ของคุณคือ: #${data.order_id}`,
+                    icon: 'success',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#28a745'
+                }).then(() => {
+                    cart = []; // เคลียร์ตะกร้า
+                    updateCartUI();
+                    location.reload(); // รีเฟรชหน้า
+                });
             } else {
-                alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถทำรายการได้'));
+                // ใช้ SweetAlert แสดงข้อผิดพลาด
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: data.message || 'ไม่สามารถทำรายการได้',
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#dc3545'
+                });
             }
         })
         .catch(err => {
             console.error(err);
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+            Swal.fire({
+                title: 'ข้อผิดพลาดเครือข่าย',
+                text: 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์',
+                icon: 'error',
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#dc3545'
+            });
         })
         .finally(() => {
             btnCheckout.disabled = false;

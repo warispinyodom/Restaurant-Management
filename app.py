@@ -4,14 +4,34 @@ import ssl
 import urllib.request
 import urllib.parse
 import json
+import uuid
 from functools import wraps
 from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# ตั้งค่าชื่อ Firebase Storage Bucket
+# ----------------------------------------------------
+# Firebase Admin SDK Setup (สำหรับจัดการ Storage)
+# ----------------------------------------------------
+import firebase_admin
+from firebase_admin import credentials, storage
+
 FIREBASE_BUCKET = "webapplication-e7922.firebasestorage.app"
+
+# เริ่มต้น Firebase Admin SDK (ตรวจสอบไฟล์ serviceAccountKey.json)
+if not firebase_admin._apps:
+    cred_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
+    if os.path.exists(cred_path):
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred, {
+            'storageBucket': FIREBASE_BUCKET
+        })
+    else:
+        # หากไม่มีไฟล์ serviceAccountKey.json จะใช้ Default App Context
+        firebase_admin.initialize_app(options={
+            'storageBucket': FIREBASE_BUCKET
+        })
 
 from models import get_db_connection, init_db
 # 1. นำเข้าฟังก์ชันจาก auth_utils (Firebase Auth)
@@ -50,34 +70,29 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def upload_to_firebase_storage(file, folder="uploads"):
-    """ฟังก์ชันอัปโหลดไฟล์รูปภาพไปยัง Firebase Storage ผ่าน REST API"""
+    """ฟังก์ชันอัปโหลดไฟล์รูปภาพไปยัง Firebase Storage ผ่าน Firebase Admin SDK"""
     try:
         if not file or not file.filename:
             return None
             
-        filename = secure_filename(f"{folder}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-        storage_path = f"{folder}/{filename}"
-        encoded_path = urllib.parse.quote(storage_path, safe='')
+        extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+        unique_filename = f"{folder}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}.{extension}"
+        storage_path = f"{folder}/{unique_filename}"
         
-        upload_url = f"https://firebasestorage.googleapis.com/v0/b/{FIREBASE_BUCKET}/o?uploadType=media&name={encoded_path}"
+        # เชื่อมต่อ Storage Bucket
+        bucket = storage.bucket()
+        blob = bucket.blob(storage_path)
         
-        file_data = file.read()
         content_type = file.content_type or 'image/jpeg'
+        blob.upload_from_string(file.read(), content_type=content_type)
         
-        req = urllib.request.Request(
-            upload_url,
-            data=file_data,
-            headers={'Content-Type': content_type},
-            method='POST'
-        )
+        # ตั้งค่าให้รูปเป็นสาธารณะ เพื่อให้นำ URL ไปแสดงบนเว็บได้ทันที
+        blob.make_public()
         
-        with urllib.request.urlopen(req, context=ssl_context) as response:
-            if response.status in [200, 201]:
-                # ส่งคืน URL สาธารณะของไฟล์บน Firebase Storage
-                return f"https://firebasestorage.googleapis.com/v0/b/{FIREBASE_BUCKET}/o/{encoded_path}?alt=media"
+        return blob.public_url
     except Exception as e:
         print(f"Firebase Storage Upload Error: {e}")
-    return None
+        return None
 
 # Helper ตรวจสอบสิทธิ์ Admin
 def admin_required(func_route):
