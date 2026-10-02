@@ -29,19 +29,12 @@
                     <tr>
                         <td class="ps-4">
                             {% if menu.image_file %}
-                            {% if menu.image_file %}
                             <img src="{{ menu.image_file }}" alt="{{ menu.name }}"
                                 style="max-width: 100px; border-radius: 8px;">
                             {% else %}
                             <!-- กรณีไม่มีรูปให้แสดงรูป Default แทน -->
                             <img src="{{ url_for('static', filename='images/default-image.png') }}" alt="No Image"
                                 style="max-width: 100px;">
-                            {% endif %}
-                            {% else %}
-                            <div class="bg-light rounded-3 d-flex align-items-center justify-content-center text-secondary border"
-                                style="width: 52px; height: 52px;">
-                                <i class="fas fa-image"></i>
-                            </div>
                             {% endif %}
                         </td>
                         <td><span class="fw-bold text-dark">{{ menu.name }}</span></td>

@@ -79,9 +79,12 @@ def upload_to_firebase_storage(file, folder="uploads"):
         
         content_type = file.content_type or 'image/jpeg'
         blob.upload_from_string(file.read(), content_type=content_type)
-        blob.make_public()
         
-        return blob.public_url
+        # สร้าง URL ของ Firebase Storage โดยตรงด้วย urllib.parse ที่นำเข้ามาไว้แล้ว
+        encoded_path = urllib.parse.quote(storage_path, safe='')
+        firebase_url = f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/{encoded_path}?alt=media"
+        
+        return firebase_url
     except Exception as e:
         print(f"Firebase Storage Upload Error: {e}")
         return None

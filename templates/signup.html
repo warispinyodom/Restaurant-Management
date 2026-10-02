@@ -28,7 +28,8 @@
         {% endif %}
         {% endwith %}
 
-        <form method="POST" action="{{ url_for('signin') }}" class="auth-form">
+        <form method="POST" action="/signup" class="auth-form">
+            <!-- หรือใช้ action="{{ url_for('signup') }}" ก็ได้ -->
             <!-- เพิ่มบรรทัดนี้เพื่อส่ง role 'customer' ไปให้ backend -->
             <input type="hidden" name="role" value="customer">
 
