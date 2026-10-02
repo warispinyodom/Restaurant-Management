@@ -89,6 +89,30 @@ def upload_to_firebase_storage(file, folder="uploads"):
         print(f"Firebase Storage Upload Error: {e}")
         return None
 
+def delete_from_firebase_storage(image_url):
+    """ฟังก์ชันลบไฟล์รูปภาพออกจาก Firebase Storage โดยสกัดหา Storage Path จาก URL"""
+    try:
+        if not image_url or not isinstance(image_url, str):
+            return False
+            
+        # ตรวจสอบว่าเป็น URL ของ Firebase Storage หรือไม่
+        if "/o/" in image_url:
+            # แยก Path ของไฟล์ออกจาก URL (อยู่ระหว่าง /o/ และ ?)
+            path_part = image_url.split("/o/")[1].split("?")[0]
+            # แปลง %2F หรือ URL Encoding กลับเป็น String ปกติ (เช่น menus/filename.jpg)
+            storage_path = urllib.parse.unquote(path_part)
+            
+            bucket = storage.bucket()
+            blob = bucket.blob(storage_path)
+            
+            if blob.exists():
+                blob.delete()
+                print(f"Successfully deleted {storage_path} from Firebase Storage")
+                return True
+    except Exception as e:
+        print(f"Firebase Storage Delete Error: {e}")
+    return False
+
 # ==========================================
 # Firebase RTDB Helper Functions
 # ==========================================
@@ -425,6 +449,13 @@ def admin_menu_edit(id):
 
         file = request.files.get('image')
         if file and allowed_file(file.filename):
+            # 1. ดึงข้อมูลเมนูเดิมเพื่อเช็ค URL รูปเก่า
+            old_menu = get_firebase_data(f'menus/{id}')
+            if old_menu and isinstance(old_menu, dict) and old_menu.get('image_file'):
+                # 2. ลบรูปภาพเก่าออกจาก Firebase Storage
+                delete_from_firebase_storage(old_menu['image_file'])
+
+            # 3. อัปโหลดรูปภาพใหม่
             payload['image_file'] = upload_to_firebase_storage(file, folder="menus")
 
         if patch_firebase_data('menus', id, payload):
@@ -440,6 +471,12 @@ def admin_menu_edit(id):
 @admin_required
 def admin_menu_delete(id):
     try:
+        # 1. ดึงข้อมูลเมนูเพื่อนำ URL รูปภาพไปลบออกก่อน
+        menu = get_firebase_data(f'menus/{id}')
+        if menu and isinstance(menu, dict) and menu.get('image_file'):
+            delete_from_firebase_storage(menu['image_file'])
+
+        # 2. ลบข้อมูลเมนูออกจาก Database
         if delete_firebase_data('menus', id):
             return jsonify({'status': 'success', 'message': 'ลบเมนูเรียบร้อยแล้ว'})
         return jsonify({'status': 'error', 'message': 'เกิดข้อผิดพลาดในการลบ'}), 500
