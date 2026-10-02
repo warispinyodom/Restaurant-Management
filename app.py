@@ -19,11 +19,30 @@ from firebase_admin import credentials, storage
 # ตั้งค่า Bucket โดยไม่ต้องมี gs:// หรือโฟลเดอร์ต่อท้าย
 FIREBASE_BUCKET = "webapplication-e7922.firebasestorage.app"
 
-# เริ่มต้น Firebase Admin SDK (ตรวจสอบไฟล์ serviceAccountKey.json)
+# เริ่มต้น Firebase Admin SDK (รองรับทั้ง Vercel Environment Variable และ Local File)
 if not firebase_admin._apps:
-    cred_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
-    if os.path.exists(cred_path):
-        cred = credentials.Certificate(cred_path)
+    cred = None
+    
+    # 1. ตรวจสอบ Environment Variable สำหรับ Vercel/Production
+    service_account_env = os.environ.get('FIREBASE_SERVICE_ACCOUNT')
+    if service_account_env:
+        try:
+            cred_dict = json.loads(service_account_env)
+            # แก้ไขปัญหา Newline (\n) ใน Private Key บน Vercel
+            if 'private_key' in cred_dict:
+                cred_dict['private_key'] = cred_dict['private_key'].replace('\\n', '\n')
+            cred = credentials.Certificate(cred_dict)
+        except Exception as e:
+            print(f"Error parsing FIREBASE_SERVICE_ACCOUNT: {e}")
+
+    # 2. หากไม่มี Env Variable ให้ดึงจากไฟล์ serviceAccountKey.json สำหรับ Local
+    if not cred:
+        cred_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+
+    # 3. Initialize Firebase App
+    if cred:
         firebase_admin.initialize_app(cred, {
             'storageBucket': FIREBASE_BUCKET
         })
@@ -333,9 +352,8 @@ def staff_menu_manage():
         raw_menus = get_firebase_data('menus')
         menus = parse_firebase_data(raw_menus)
     except Exception as e:
-        print(f"Error loading staff menus: {e}") # ปริ้นเก็บไว้ดูเองใน Console
+        print(f"Error loading staff menus: {e}")
         menus = []
-        # ซ่อน Exception จากผู้ใช้ แสดงแค่ข้อความทั่วไป
         flash("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูลเมนู กรุณาลองใหม่อีกครั้ง", "error") 
 
     return render_template('staff/menu_manage.html', menus=menus)
