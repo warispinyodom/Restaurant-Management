@@ -30,11 +30,13 @@
                         <td class="ps-4">
                             {% if menu.image_file %}
                             <img src="{{ menu.image_file }}" alt="{{ menu.name }}"
-                                style="max-width: 100px; border-radius: 8px;">
+                                style="width: 64px; height: 64px; object-fit: cover; border-radius: 10px;"
+                                class="border">
                             {% else %}
                             <!-- กรณีไม่มีรูปให้แสดงรูป Default แทน -->
                             <img src="{{ url_for('static', filename='images/default-image.png') }}" alt="No Image"
-                                style="max-width: 100px;">
+                                style="width: 64px; height: 64px; object-fit: cover; border-radius: 10px;"
+                                class="border">
                             {% endif %}
                         </td>
                         <td><span class="fw-bold text-dark">{{ menu.name }}</span></td>
