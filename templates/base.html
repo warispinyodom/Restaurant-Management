@@ -17,8 +17,9 @@
 
     <style>
         :root {
-            --sidebar-width: 270px;
+            --sidebar-width: 260px;
             --primary-blue: #2563eb;
+            --bg-main: #f8fafc;
         }
 
         * {
@@ -26,10 +27,12 @@
         }
 
         body {
-            background-color: #f8fafc;
+            background-color: var(--bg-main);
             font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
             color: #334155;
             overflow-x: hidden;
+            margin: 0;
+            padding: 0;
         }
 
         /* โครงสร้าง Container หลัก */
@@ -41,18 +44,17 @@
 
         /* โครงสร้าง Sidebar พื้นฐาน */
         .sidebar {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
             width: var(--sidebar-width);
-            z-index: 1045;
+            flex-shrink: 0;
         }
 
-        /* --- 1. สไตล์สำหรับจอคอมพิวเตอร์ / แท็บเล็ตใหญ่ (Desktop >= 768px) --- */
+        /* --- 1. สำหรับจอ Desktop / Tablet ใหญ่ (>= 768px) --- */
         @media (min-width: 768px) {
             .sidebar {
                 position: sticky;
                 top: 0;
                 height: 100vh;
-                flex-shrink: 0;
                 overflow-y: auto;
             }
 
@@ -63,15 +65,10 @@
             }
         }
 
-        /* --- 2. สไตล์สำหรับจอมือถือ (Mobile < 768px) --- */
+        /* --- 2. สำหรับจอมือถือ (< 768px) --- */
         @media (max-width: 767.98px) {
             .app-container {
                 flex-direction: column;
-            }
-
-            .sidebar {
-                position: fixed !important;
-                height: 100% !important;
             }
 
             .main-content {
@@ -80,12 +77,12 @@
             }
         }
 
-        /* Profile Box */
+        /* User Profile Box */
         .user-profile-box {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            padding: 10px 14px;
+            padding: 12px;
             margin-bottom: 16px;
         }
 
@@ -157,8 +154,8 @@
 
 <body>
     <!-- Top Navbar เฉพาะจอมือถือ (< 768px) -->
-    <nav class="navbar navbar-dark bg-dark d-md-none px-3 shadow-sm sticky-top">
-        <span class="navbar-brand fw-bold d-flex align-items-center gap-2 mb-0">
+    <nav class="navbar navbar-dark bg-dark d-md-none px-3 shadow-sm sticky-top" style="background-color: #0f172a !important;">
+        <span class="navbar-brand fw-bold d-flex align-items-center gap-2 mb-0 fs-6">
             <i class="fas fa-utensils text-warning"></i> POS System
         </span>
         <button class="navbar-toggler border-0 shadow-none px-2" type="button" data-bs-toggle="offcanvas"
@@ -169,8 +166,7 @@
 
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <div class="offcanvas-md offcanvas-start sidebar text-white p-3 d-flex flex-column" id="sidebarMenu"
-            tabindex="-1">
+        <div class="offcanvas-md offcanvas-start sidebar text-white p-3 d-flex flex-column" id="sidebarMenu" tabindex="-1">
 
             <!-- Header โลโก้ -->
             <div class="d-flex align-items-center justify-content-between mb-3 px-1 pt-1">
@@ -189,23 +185,34 @@
 
             <!-- Profile Info (แสดงเฉพาะผู้ที่เข้าสู่ระบบแล้ว) -->
             {% if session.get('username') %}
-            <div class="user-profile-box d-flex align-items-center gap-2.5">
-                <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
-                    style="width: 36px; height: 36px; min-width: 36px;">
+            <div class="user-profile-box d-flex align-items-center gap-3">
+                <!-- วงกลม Avatar -->
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 shadow-sm"
+                    style="width: 40px; height: 40px; min-width: 40px; font-size: 1.1rem;">
                     {{ session.get('username')[0] | upper }}
                 </div>
-                <div class="overflow-hidden">
-                    <div class="fw-semibold text-white text-truncate small">{{ session.get('username') }}</div>
-                    <span
-                        class="badge bg-{{ 'danger' if session.get('role') == 'admin' else ('info' if session.get('role') == 'staff' else 'success') }}-subtle text-{{ 'danger' if session.get('role') == 'admin' else ('info' if session.get('role') == 'staff' else 'success') }} rounded-pill px-2 py-0.5"
-                        style="font-size: 0.675rem;">
-                        {{ session.get('role') | upper }}
-                    </span>
+                <!-- รายละเอียดชื่อและสิทธิ์ -->
+                <div class="d-flex flex-column justify-content-center overflow-hidden">
+                    <div class="fw-semibold text-white text-truncate mb-1" style="font-size: 0.9rem; line-height: 1.2;">
+                        {{ session.get('username') }}
+                    </div>
+                    <div>
+                        {% if session.get('role') == 'admin' %}
+                            <span class="badge bg-danger text-white rounded-pill px-2 py-1"
+                                style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">ADMIN</span>
+                        {% elif session.get('role') == 'staff' %}
+                            <span class="badge bg-info text-dark rounded-pill px-2 py-1"
+                                style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">STAFF</span>
+                        {% else %}
+                            <span class="badge bg-success text-white rounded-pill px-2 py-1"
+                                style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">CUSTOMER</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endif %}
 
-            <!-- Navigation Links แยกตาม Role อย่างชัดเจน -->
+            <!-- Navigation Links -->
             <div class="nav flex-column mb-auto">
 
                 <!-- 1. ADMIN MENU -->
@@ -260,7 +267,7 @@
                     <i class="fas fa-store text-success"></i> <span>หน้าหลัก / สั่งอาหาร</span>
                 </a>
 
-                <!-- 4. GUEST MENU (ยังไม่ได้เข้าสู่ระบบ) -->
+                <!-- 4. GUEST MENU -->
                 {% else %}
                 <div class="menu-section-label">เข้าสู่ระบบ</div>
 
@@ -277,7 +284,7 @@
 
             </div>
 
-            <!-- ปุ่มออกจากระบบด้านล่าง (แสดงเฉพาะเมื่อเข้าสู่ระบบแล้ว) -->
+            <!-- ปุ่มออกจากระบบด้านล่าง -->
             {% if session.get('username') %}
             <div class="mt-auto pt-2 border-top border-secondary border-opacity-25">
                 <a href="{{ url_for('signout') }}" class="nav-link-custom text-danger">
@@ -312,24 +319,21 @@
 
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Chart.js -->
+    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 1. ฟังก์ชันแสดงการแจ้งเตือน (Alert Replacement)
         function showNotification(icon, title, text = '') {
             return Swal.fire({
-                icon: icon, // 'success', 'error', 'warning', 'info'
+                icon: icon,
                 title: title,
                 text: text,
                 confirmButtonColor: '#2563eb'
             });
         }
 
-        // 2. ฟังก์ชันยืนยันการทำรายการ Sensitive (Confirm Replacement)
         function confirmAction(title, text, onConfirmCallback, icon = 'warning', confirmText = 'ยืนยัน', cancelText = 'ยกเลิก') {
             Swal.fire({
                 title: title,
