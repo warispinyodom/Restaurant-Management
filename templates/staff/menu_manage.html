@@ -37,21 +37,21 @@
                                     </span>
                                 </td>
                                 
-                                <!-- ช่องปรับราคา (แปลงเป็น float ก่อน abs เพื่อป้องกัน Error หากค่าเป็น String) -->
+                                <!-- ช่องปรับราคา (ใช้ .get ป้องกัน UndefinedError) -->
                                 <td>
                                     <div class="input-group input-group-sm" style="max-width: 140px;">
                                         <span class="input-group-text bg-light text-muted border-end-0">฿</span>
                                         <input type="number" class="form-control menu-price border-start-0 ps-1" 
-                                               value="{{ (menu.price|float if menu.price is not none else 0)|abs }}" 
+                                               value="{{ (menu.get('price', 0)|float)|abs }}" 
                                                step="0.5" min="0">
                                     </div>
                                 </td>
                                 
-                                <!-- ช่องปรับจำนวนคงเหลือ -->
+                                <!-- ช่องปรับจำนวนคงเหลือ (ใช้ .get ป้องกัน UndefinedError) -->
                                 <td>
                                     <div class="input-group input-group-sm" style="max-width: 140px;">
                                         <input type="number" class="form-control menu-stock" 
-                                               value="{% if menu.stock is not none and menu.stock != '' %}{{ (menu.stock|int)|abs }}{% endif %}" 
+                                               value="{% if menu.get('stock') is not none and menu.get('stock') != '' %}{{ (menu.get('stock')|int)|abs }}{% endif %}" 
                                                placeholder="ไม่จำกัด" min="0">
                                     </div>
                                 </td>
@@ -62,9 +62,9 @@
                                         <input class="form-check-input menu-status-toggle" type="checkbox" role="switch" 
                                                id="statusSwitch{{ menu.id }}" 
                                                onchange="toggleStatusText('{{ menu.id }}')"
-                                               {% if menu.status == 'available' %}checked{% endif %}>
+                                               {% if menu.get('status') == 'available' %}checked{% endif %}>
                                         <label class="form-check-label small fw-semibold ms-1" id="statusLabel{{ menu.id }}" for="statusSwitch{{ menu.id }}">
-                                            {{ 'พร้อมขาย' if menu.status == 'available' else 'หมด' }}
+                                            {{ 'พร้อมขาย' if menu.get('status') == 'available' else 'หมด' }}
                                         </label>
                                     </div>
                                 </td>

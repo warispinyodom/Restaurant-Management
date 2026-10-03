@@ -29,7 +29,6 @@ def get_all_orders():
                         item = dict(order_info)
                         item['id'] = str(order_id)
                         
-                        # แปลงข้อมูลรายการสินค้าให้ปลอดภัย
                         raw_items = item.get('items', [])
                         if isinstance(raw_items, dict):
                             items_list = list(raw_items.values())
@@ -39,7 +38,7 @@ def get_all_orders():
                             items_list = []
                             
                         item['items'] = items_list
-                        item['order_items'] = items_list  # ใช้ตัวแปรนี้ใน HTML ป้องกัน Jinja2 สับสน
+                        item['order_items'] = items_list
                         return item
                     return None
 
@@ -116,6 +115,12 @@ def get_all_menus():
                         cat_id = item.get('category_id', '')
                         cat_name_from_db = categories.get(cat_id, {}).get('name') if isinstance(categories, dict) and cat_id in categories else None
                         item['category'] = cat_name_from_db or item.get('category', 'ทั่วไป')
+                        
+                        # ป้องกัน UndefinedError สำหรับ stock และ price
+                        if 'stock' not in item:
+                            item['stock'] = None
+                        if 'price' not in item:
+                            item['price'] = 0
                         
                         if 'status' not in item:
                             is_avail = item.get('is_available', True)
