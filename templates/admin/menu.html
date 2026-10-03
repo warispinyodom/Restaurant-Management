@@ -1,80 +1,164 @@
 {% extends 'base.html' %}
 {% block content %}
+<style>
+    /* สไตล์การ์ดอาหารสไตล์แอปสั่งอาหาร/ตี๋น้อย */
+    .menu-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+    .menu-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+    .menu-img-wrapper {
+        position: relative;
+        width: 100%;
+        padding-top: 75%; /* อัตราส่วน 4:3 */
+        overflow: hidden;
+        background-color: #f8f9fa;
+    }
+    .menu-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .menu-card:hover .menu-img {
+        transform: scale(1.05);
+    }
+    .status-badge-overlay {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 2;
+    }
+    .price-badge-overlay {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        z-index: 2;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
+        color: #fff;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.95rem;
+    }
+    .out-of-stock-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.1rem;
+        backdrop-filter: blur(2px);
+    }
+    .out-of-stock-img {
+        filter: grayscale(80%);
+    }
+</style>
+
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
         <h3 class="fw-bold mb-1">จัดการเมนูอาหาร</h3>
         <p class="text-muted mb-0 small">เพิ่ม แก้ไข และกำหนดสถานะเมนูอาหารทั้งหมดในร้าน</p>
     </div>
-    <button class="btn btn-primary shadow-sm px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#addMenuModal">
+    <button class="btn btn-primary shadow-sm px-4 rounded-pill fw-semibold" data-bs-toggle="modal" data-bs-target="#addMenuModal">
         <i class="fas fa-plus me-1"></i> เพิ่มเมนูใหม่
     </button>
 </div>
 
-<div class="card table-card border-0 shadow-sm rounded-3 overflow-hidden">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4" style="width: 90px;">รูปภาพ</th>
-                        <th>ชื่อเมนู</th>
-                        <th>หมวดหมู่</th>
-                        <th>ราคา</th>
-                        <th>สถานะ</th>
-                        <th class="text-end pe-4" style="width: 170px;">จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for menu in menus %}
-                    <tr>
-                        <td class="ps-4">
-                            {% if menu.image_file %}
-                            <img src="{{ menu.image_file }}" alt="{{ menu.name }}"
-                                style="width: 64px; height: 64px; object-fit: cover; border-radius: 10px;"
-                                class="border">
-                            {% else %}
-                            <!-- กรณีไม่มีรูปให้แสดงรูป Default แทน -->
-                            <img src="{{ url_for('static', filename='images/default-image.png') }}" alt="No Image"
-                                style="width: 64px; height: 64px; object-fit: cover; border-radius: 10px;"
-                                class="border">
-                            {% endif %}
-                        </td>
-                        <td><span class="fw-bold text-dark">{{ menu.name }}</span></td>
-                        <td><span class="badge bg-light text-secondary border px-2 py-1">{{ menu.category }}</span></td>
-                        <td><span class="fw-bold text-primary">฿{{ menu.price|abs }}</span></td>
-                        <td>
-                            {% if menu.status == 'available' %}
-                            <span
-                                class="badge bg-success-subtle text-success border border-success px-2 py-1">พร้อมขาย</span>
-                            {% else %}
-                            <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">หมด</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="d-inline-flex gap-1">
-                                <button type="button"
-                                    class="btn btn-sm btn-warning text-dark fw-semibold px-2 py-1 d-inline-flex align-items-center text-nowrap"
-                                    data-bs-toggle="modal" data-bs-target="#editMenuModal{{ menu.id }}">
-                                    <i class="fas fa-pen-to-square me-1"></i> แก้ไข
-                                </button>
-                                <button type="button"
-                                    class="btn btn-sm btn-danger fw-semibold px-2 py-1 d-inline-flex align-items-center text-nowrap"
-                                    onclick="deleteItem('/admin/menu/delete/{{ menu.id }}')">
-                                    <i class="fas fa-trash-can me-1"></i> ลบ
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    {% if not menus %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">ยังไม่มีรายการเมนูอาหาร</td>
-                    </tr>
+<!-- แสดงรายการเมนูแบบ Grid Card -->
+<div class="row g-3 g-md-4">
+    {% for menu in menus %}
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="card h-100 menu-card shadow-sm">
+            <!-- ส่วนรูปภาพอาหาร -->
+            <div class="menu-img-wrapper">
+                <!-- สถานะ พร้อมขาย / หมด -->
+                <div class="status-badge-overlay">
+                    {% if menu.status == 'available' %}
+                    <span class="badge bg-success shadow-sm px-2 py-1"><i class="fas fa-circle me-1" style="font-size: 6px;"></i>พร้อมขาย</span>
+                    {% else %}
+                    <span class="badge bg-danger shadow-sm px-2 py-1"><i class="fas fa-times-circle me-1"></i>สินค้าหมด</span>
                     {% endif %}
-                </tbody>
-            </table>
+                </div>
+
+                <!-- ป้ายราคา -->
+                <div class="price-badge-overlay">
+                    ฿{{ menu.price|abs }}
+                </div>
+
+                {% if menu.image_file %}
+                <img src="{{ menu.image_file }}" alt="{{ menu.name }}" 
+                     class="menu-img {% if menu.status != 'available' %}out-of-stock-img{% endif %}">
+                {% else %}
+                <img src="{{ url_for('static', filename='images/default-image.png') }}" alt="No Image" 
+                     class="menu-img {% if menu.status != 'available' %}out-of-stock-img{% endif %}">
+                {% endif %}
+
+                {% if menu.status != 'available' %}
+                <div class="out-of-stock-overlay">
+                    <span><i class="fas fa-ban me-1"></i> หมดชั่วคราว</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- รายละเอียดเมนู -->
+            <div class="card-body p-3 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="mb-1">
+                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small fw-normal">{{ menu.category }}</span>
+                    </div>
+                    <h6 class="fw-bold text-dark text-truncate mb-2" title="{{ menu.name }}">{{ menu.name }}</h6>
+                </div>
+
+                <!-- ปุ่มจัดการ แก้ไข / ลบ -->
+                <div class="pt-2 border-top mt-2 d-flex gap-2">
+                    <button type="button"
+                        class="btn btn-sm btn-outline-warning text-dark fw-semibold flex-fill rounded-pill d-inline-flex align-items-center justify-content-center"
+                        data-bs-toggle="modal" data-bs-target="#editMenuModal{{ menu.id }}">
+                        <i class="fas fa-pen-to-square me-1"></i> แก้ไข
+                    </button>
+                    <button type="button"
+                        class="btn btn-sm btn-outline-danger fw-semibold flex-fill rounded-pill d-inline-flex align-items-center justify-content-center"
+                        onclick="deleteItem('/admin/menu/delete/{{ menu.id }}')">
+                        <i class="fas fa-trash-can me-1"></i> ลบ
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
+    {% endfor %}
+
+    {% if not menus %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body text-muted">
+                <i class="fas fa-utensils fa-3x mb-3 text-secondary opacity-50"></i>
+                <h5>ยังไม่มีรายการเมนูอาหาร</h5>
+                <p class="small mb-3">กดปุ่ม "เพิ่มเมนูใหม่" เพื่อเริ่มสร้างรายการอาหารแรกของคุณ</p>
+                <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addMenuModal">
+                    <i class="fas fa-plus me-1"></i> เพิ่มเมนูใหม่
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Edit Menu Modals -->
@@ -82,79 +166,176 @@
 <div class="modal fade" id="editMenuModal{{ menu.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form action="{{ url_for('admin_menu_edit', id=menu.id) }}" method="POST" enctype="multipart/form-data"
-            class="modal-content border-0 shadow">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">แก้ไขเมนู: {{ menu.name }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white p-3 border-0">
+                <h5 class="modal-title fw-bold fs-6">
+                    <i class="fas fa-pen-to-square text-warning me-1"></i> แก้ไขเมนู: {{ menu.name }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body py-3">
+            <div class="modal-body p-4 bg-light">
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">ชื่อเมนู</label>
-                    <input type="text" name="name" class="form-control" value="{{ menu.name }}" required>
+                    <label class="form-label small fw-bold">ชื่อรายการอาหาร</label>
+                    <input type="text" name="name" class="form-control rounded-3" value="{{ menu.name }}" required>
                 </div>
+
+                <!-- หมวดหมู่แบบ Dropdown Select สไตล์เล่มเมนู -->
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">หมวดหมู่</label>
-                    <input type="text" name="category" class="form-control" value="{{ menu.category }}" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">ราคา (บาท)</label>
-                    <input type="number" name="price" class="form-control" value="{{ menu.price|abs }}" step="0.01"
-                        min="0" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">สถานะ</label>
-                    <select name="status" class="form-select">
-                        <option value="available" {% if menu.status=='available' %}selected{% endif %}>พร้อมขาย</option>
-                        <option value="out_of_stock" {% if menu.status=='out_of_stock' %}selected{% endif %}>หมด
-                        </option>
+                    <label class="form-label small fw-bold">เลือกหมวดหมู่</label>
+                    <select name="category" class="form-select rounded-3 fw-semibold text-dark">
+                        <option value="อาหารจานหลัก" {% if menu.category == 'อาหารจานหลัก' %}selected{% endif %}>🍲 อาหารจานหลัก</option>
+                        <option value="ยำ / ของว่างทานเล่น" {% if menu.category == 'ยำ / ของว่างทานเล่น' or menu.category == 'ยำ / ทานเล่น' %}selected{% endif %}>🥗 ยำ / ของว่างทานเล่น</option>
+                        <option value="ชาบู / สุกี้ / ปิ้งย่าง" {% if menu.category == 'ชาบู / สุกี้ / ปิ้งย่าง' %}selected{% endif %}>🥩 ชาบู / สุกี้ / ปิ้งย่าง</option>
+                        <option value="เครื่องดื่ม" {% if menu.category == 'เครื่องดื่ม' %}selected{% endif %}>🥤 เครื่องดื่ม</option>
+                        <option value="ของหวาน" {% if menu.category == 'ของหวาน' %}selected{% endif %}>🍨 ของหวาน</option>
+                        <option value="เมนูแนะนำ / โปรโมชั่น" {% if menu.category == 'เมนูแนะนำ / โปรโมชั่น' %}selected{% endif %}>🌟 เมนูแนะนำ / โปรโมชั่น</option>
+                        <option value="อื่น ๆ" {% if menu.category == 'อื่น ๆ' %}selected{% endif %}>📦 อื่น ๆ</option>
                     </select>
                 </div>
+
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">เปลี่ยนรูปภาพ (เว้นว่างไว้หากไม่เปลี่ยน)</label>
-                    <input type="file" name="image" class="form-control" accept="image/*">
+                    <label class="form-label small fw-bold">ราคา (บาท)</label>
+                    <input type="number" name="price" class="form-control rounded-3" value="{{ menu.price|abs }}" step="0.01" min="0" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">สถานะพร้อมขาย</label>
+                    <select name="status" class="form-select rounded-3">
+                        <option value="available" {% if menu.status=='available' %}selected{% endif %}>พร้อมขาย</option>
+                        <option value="out_of_stock" {% if menu.status=='out_of_stock' %}selected{% endif %}>สินค้าหมด ( Out of Stock )</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">เปลี่ยนรูปภาพอาหาร (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</label>
+                    <input type="file" name="image" class="form-control rounded-3" accept="image/*">
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
-                <button type="submit" class="btn btn-success px-4">บันทึกการแก้ไข</button>
+            <div class="modal-footer border-0 pt-0 bg-light p-3">
+                <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="submit" class="btn btn-success rounded-pill px-4">บันทึกการแก้ไข</button>
             </div>
         </form>
     </div>
 </div>
 {% endfor %}
 
-<!-- Add Menu Modal -->
+<!-- Add Menu Modal (เลือกหมวดหมู่แบบปุ่มกด สไตล์เล่มเมนูร้านดัง) -->
 <div class="modal fade" id="addMenuModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <form action="{{ url_for('admin_menu_add') }}" method="POST" enctype="multipart/form-data"
-            class="modal-content border-0 shadow">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">เพิ่มเมนูใหม่</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            
+            <!-- Header เล่มเมนู -->
+            <div class="modal-header bg-dark text-white p-4 border-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="fas fa-book-open fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0">เพิ่มรายการลงเล่มเมนู</h5>
+                        <small class="text-white-50">เลือกหมวดหมู่และระบุรายละเอียดอาหาร</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body py-3">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">ชื่อเมนู</label>
-                    <input type="text" name="name" class="form-control" placeholder="เช่น ยำวุ้นเส้น" required>
+
+            <div class="modal-body p-4 bg-light">
+                <!-- เลือกหมวดหมู่แบบ Category Chips -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark mb-2">
+                        <i class="fas fa-layer-group text-primary me-1"></i> เลือกหมวดหมู่ / ประเภทอาหาร
+                    </label>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3">
+                            <input type="radio" class="btn-check" name="category" id="cat_main" value="อาหารจานหลัก" checked>
+                            <label class="btn btn-outline-dark w-100 py-2 rounded-3 text-start d-flex align-items-center gap-2 shadow-sm h-100" for="cat_main">
+                                <span class="fs-5">🍲</span>
+                                <span class="small fw-semibold">อาหารจานหลัก</span>
+                            </label>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <input type="radio" class="btn-check" name="category" id="cat_snack" value="ยำ / ของว่างทานเล่น">
+                            <label class="btn btn-outline-dark w-100 py-2 rounded-3 text-start d-flex align-items-center gap-2 shadow-sm h-100" for="cat_snack">
+                                <span class="fs-5">🥗</span>
+                                <span class="small fw-semibold">ยำ / ของว่าง</span>
+                            </label>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <input type="radio" class="btn-check" name="category" id="cat_shabu" value="ชาบู / สุกี้ / ปิ้งย่าง">
+                            <label class="btn btn-outline-dark w-100 py-2 rounded-3 text-start d-flex align-items-center gap-2 shadow-sm h-100" for="cat_shabu">
+                                <span class="fs-5">🥩</span>
+                                <span class="small fw-semibold">ชาบู / ปิ้งย่าง</span>
+                            </label>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <input type="radio" class="btn-check" name="category" id="cat_drink" value="เครื่องดื่ม">
+                            <label class="btn btn-outline-dark w-100 py-2 rounded-3 text-start d-flex align-items-center gap-2 shadow-sm h-100" for="cat_drink">
+                                <span class="fs-5">🥤</span>
+                                <span class="small fw-semibold">เครื่องดื่ม</span>
+                            </label>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <input type="radio" class="btn-check" name="category" id="cat_dessert" value="ของหวาน">
+                            <label class="btn btn-outline-dark w-100 py-2 rounded-3 text-start d-flex align-items-center gap-2 shadow-sm h-100" for="cat_dessert">
+                                <span class="fs-5">🍨</span>
+                                <span class="small fw-semibold">ของหวาน</span>
+                            </label>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <input type="radio" class="btn-check" name="category" id="cat_special" value="เมนูแนะนำ / โปรโมชั่น">
+                            <label class="btn btn-outline-dark w-100 py-2 rounded-3 text-start d-flex align-items-center gap-2 shadow-sm h-100" for="cat_special">
+                                <span class="fs-5">🌟</span>
+                                <span class="small fw-semibold">เมนูแนะนำ</span>
+                            </label>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input type="radio" class="btn-check" name="category" id="cat_other" value="อื่น ๆ">
+                            <label class="btn btn-outline-dark w-100 py-2 rounded-3 text-start d-flex align-items-center gap-2 shadow-sm h-100" for="cat_other">
+                                <span class="fs-5">📦</span>
+                                <span class="small fw-semibold">อื่น ๆ</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">หมวดหมู่</label>
-                    <input type="text" name="category" class="form-control" placeholder="เช่น อาหารจานหลัก, เครื่องดื่ม"
-                        required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">ราคา (บาท)</label>
-                    <input type="number" name="price" class="form-control" placeholder="0.00" step="0.01" min="0"
-                        required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">รูปภาพอาหาร</label>
-                    <input type="file" name="image" class="form-control" accept="image/*" required>
+
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white mb-3">
+                    <div class="row g-3">
+                        <!-- ชื่อเมนู -->
+                        <div class="col-12 col-md-7">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="fas fa-utensils text-primary me-1"></i> ชื่อรายการอาหาร
+                            </label>
+                            <input type="text" name="name" class="form-control form-control-lg rounded-3 fs-6" placeholder="เช่น ยำวุ้นเส้น" required>
+                        </div>
+
+                        <!-- ราคา -->
+                        <div class="col-12 col-md-5">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="fas fa-tag text-primary me-1"></i> ราคา (บาท)
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light fw-bold border-end-0">฿</span>
+                                <input type="number" name="price" class="form-control form-control-lg rounded-end-3 fs-6 border-start-0" placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <!-- รูปภาพอาหาร -->
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="fas fa-image text-primary me-1"></i> อัปโหลดรูปภาพอาหาร
+                            </label>
+                            <input type="file" name="image" class="form-control rounded-3" accept="image/*" required>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
-                <button type="submit" class="btn btn-primary px-4">เพิ่มเมนู</button>
+
+            <div class="modal-footer bg-white border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+                    <i class="fas fa-plus-circle me-1"></i> เพิ่มเมนู
+                </button>
             </div>
         </form>
     </div>

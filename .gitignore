@@ -3,3 +3,4 @@ database.json
 models.py
 seed_db.py
 restaurant.db
+database_mockup.json

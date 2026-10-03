@@ -1,0 +1,50 @@
+{
+  "categories": {},
+  "menus": {},
+  "orders": {},
+  "payment_channels": {},
+  "users": {
+    "-P2shSPjGCQhFWTr-R8G": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$zEECGtbA0zm9fXgn$0066751ca8e8467aef471231b11ba7f138621afa072da2fab48860040183f89bf150eb490a2c8600fbb0a16de05b519d166faccf6242870ddcf596ed10f88002",
+      "role": "staff",
+      "username": "staff01"
+    },
+    "-P2vxpFZO8c3dsmYIvrP": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$isQM3uMLVKjszgCy$1d20397725a13709acca8860fe3e206b4c5e8d24720fffb239356d569742aed32cceca5d43411c6b65485bfc78654d3cf20c9793051e96b6543397c974bdcc2c",
+      "role": "customer",
+      "username": "user02"
+    },
+    "-P2w0WRlnzZ3fInz_m6N": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$mgDE3lt9VFDLsGj3$cda6266fc804b34377e209560854d821a3e48b576c7c41adcf2f1e695f92aaa57df8ed3e2df82a103ef48149c25692a1bc40997ac4c65e11da108b7ee916ea7e",
+      "role": "customer",
+      "username": "test01"
+    },
+    "-P2wHvwZQTBeYLMwyXxW": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$a4THK1pumUf9Sd16$0d01dc310d9752df5fb8cefc07f6d56625420c0e46f6f01d00206168f945c2a9dfc80ec925a238fdb03a349333a5eaa4a3a4105c6954312ec5482424d80d819f",
+      "role": "customer",
+      "username": "Oak"
+    },
+    "-P2wNY1SdyC6Wqk7BkzM": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$Nsvg7IpE5N6JCwxF$6ba95d9c9f0d8dd13f83bba7ef8988ee7ce5de9aa642e88d045671e53abbbc3b94e7dd00376f8bfe61427192837e47b0210180559c721334093e1cfe43d10306",
+      "role": "customer",
+      "username": "Soda"
+    },
+    "usr_admin01": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$E8PxqDbqpDt4G8nL$d0783a548e308bf2dd94e9cdccaecdc75d66d9863f7847127fdc4d582e9f52ebf397e707f84d81404f169e670ea0e1c0aacee6071d15b9d110e917829b48a5c7",
+      "role": "admin",
+      "username": "admin01"
+    },
+    "usr_user01": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$RijKne4Vnl7WKAoi$6532e96415982da2687d5e58d6e5f4bc8e4913aeaa0ae33ac72faf65ed527e6fabb23c107e3649d954c29b6c49ec0c5afd74eefccdc869d89ea2bedc2244f710",
+      "role": "customer",
+      "username": "user01"
+    }
+  }
+}
