@@ -5,7 +5,6 @@ import urllib.error
 
 FIREBASE_URL = "https://webapplication-e7922-default-rtdb.asia-southeast1.firebasedatabase.app"
 
-# SSL Context สำหรับข้ามการตรวจใบรับรองความปลอดภัย ป้องกันปัญหา SSL error ใน Localhost
 ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
@@ -24,18 +23,36 @@ def get_all_orders():
                     return []
                 
                 orders = []
-                # กรณี Firebase ส่งกลับมาเป็น Dictionary
+
+                def process_order(order_id, order_info):
+                    if isinstance(order_info, dict):
+                        item = dict(order_info)
+                        item['id'] = str(order_id)
+                        
+                        # แปลงข้อมูลรายการสินค้าให้ปลอดภัย
+                        raw_items = item.get('items', [])
+                        if isinstance(raw_items, dict):
+                            items_list = list(raw_items.values())
+                        elif isinstance(raw_items, list):
+                            items_list = raw_items
+                        else:
+                            items_list = []
+                            
+                        item['items'] = items_list
+                        item['order_items'] = items_list  # ใช้ตัวแปรนี้ใน HTML ป้องกัน Jinja2 สับสน
+                        return item
+                    return None
+
                 if isinstance(data, dict):
                     for order_id, order_info in data.items():
-                        if isinstance(order_info, dict):
-                            order_info['id'] = str(order_id)
-                            orders.append(order_info)
-                # กรณี Firebase ส่งกลับมาเป็น List
+                        processed = process_order(order_id, order_info)
+                        if processed:
+                            orders.append(processed)
                 elif isinstance(data, list):
                     for idx, order_info in enumerate(data):
-                        if isinstance(order_info, dict):
-                            order_info['id'] = str(idx)
-                            orders.append(order_info)
+                        processed = process_order(idx, order_info)
+                        if processed:
+                            orders.append(processed)
 
                 return orders
     except Exception as e:
@@ -61,10 +78,25 @@ def update_order_status_db(order_id, status):
         print(f"System Error (update_order_status_db): {e}")
         return False
 
-# ==================== 2. จัดการเมนูและสต็อก (Menus) ====================
+# ==================== 2. จัดการเมนูและหมวดหมู่ (Menus & Categories) ====================
+
+def get_all_categories():
+    """ดึงข้อมูลหมวดหมู่ทั้งหมดจาก Firebase"""
+    url = f"{FIREBASE_URL}/categories.json"
+    try:
+        req = urllib.request.Request(url, method='GET')
+        with urllib.request.urlopen(req, context=ssl_context) as response:
+            if response.status == 200:
+                raw_data = response.read().decode('utf-8')
+                data = json.loads(raw_data) if raw_data else {}
+                return data if isinstance(data, dict) else {}
+    except Exception as e:
+        print(f"System Error (get_all_categories): {e}")
+    return {}
 
 def get_all_menus():
     """ดึงรายการเมนูทั้งหมดจาก Firebase (GET /menus.json)"""
+    categories = get_all_categories()
     url = f"{FIREBASE_URL}/menus.json"
     try:
         req = urllib.request.Request(url, method='GET')
@@ -75,18 +107,34 @@ def get_all_menus():
                     return []
                 
                 menus = []
-                # กรณี Firebase ส่งกลับมาเป็น Dictionary
+                
+                def process_item(menu_id, menu_info):
+                    if isinstance(menu_info, dict):
+                        item = dict(menu_info)
+                        item['id'] = str(menu_id)
+                        
+                        cat_id = item.get('category_id', '')
+                        cat_name_from_db = categories.get(cat_id, {}).get('name') if isinstance(categories, dict) and cat_id in categories else None
+                        item['category'] = cat_name_from_db or item.get('category', 'ทั่วไป')
+                        
+                        if 'status' not in item:
+                            is_avail = item.get('is_available', True)
+                            item['status'] = 'available' if is_avail else 'out_of_stock'
+                            
+                        return item
+                    return None
+
                 if isinstance(data, dict):
                     for menu_id, menu_info in data.items():
-                        if isinstance(menu_info, dict):
-                            menu_info['id'] = str(menu_id)
-                            menus.append(menu_info)
-                # กรณี Firebase ส่งกลับมาเป็น List
+                        processed = process_item(menu_id, menu_info)
+                        if processed:
+                            menus.append(processed)
+                            
                 elif isinstance(data, list):
                     for idx, menu_info in enumerate(data):
-                        if isinstance(menu_info, dict):
-                            menu_info['id'] = str(idx)
-                            menus.append(menu_info)
+                        processed = process_item(idx, menu_info)
+                        if processed:
+                            menus.append(processed)
 
                 return menus
     except Exception as e:
@@ -95,9 +143,21 @@ def get_all_menus():
     return []
 
 def update_menu_item_db(menu_id, update_data):
-    """อัปเดตราคา สต็อก หรือสถานะอาหาร (PATCH /menus/{menu_id}.json)"""
+    """อัปเดตราคา สต็อก และสถานะอาหารใน Firebase (PATCH /menus/{menu_id}.json)"""
     url = f"{FIREBASE_URL}/menus/{menu_id}.json"
-    data = json.dumps(update_data).encode('utf-8')
+    
+    payload = {}
+    if 'price' in update_data:
+        payload['price'] = update_data['price']
+    if 'stock' in update_data:
+        payload['stock'] = update_data['stock']
+    if 'status' in update_data:
+        payload['status'] = update_data['status']
+        payload['is_available'] = (update_data['status'] == 'available')
+    elif 'is_available' in update_data:
+        payload['is_available'] = update_data['is_available']
+
+    data = json.dumps(payload).encode('utf-8')
     try:
         req = urllib.request.Request(
             url, 

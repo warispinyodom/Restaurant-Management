@@ -307,12 +307,29 @@ def staff_orders():
     try:
         staff_status = session.get('staff_status', 'ready')
         orders = get_all_orders()
-        if orders is None:
-            orders = {}
+        if not isinstance(orders, list):
+            orders = []
         return render_template('staff/orders.html', orders=orders, staff_status=staff_status)
     except Exception as e:
-        flash(f"เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล: {str(e)}", "error")
-        return render_template('staff/orders.html', orders={}, staff_status='ready')
+        print(f"Error in staff_orders: {e}")
+        return render_template('staff/orders.html', orders=[], staff_status='ready')
+
+@app.route('/staff/order/update-status/<order_id>', methods=['POST'])
+@staff_required
+def update_order_status(order_id):
+    try:
+        data = request.get_json() or {}
+        new_status = data.get('status')
+        if not new_status:
+            return jsonify({'status': 'error', 'message': 'ไม่พบข้อมูลสถานะใหม่'}), 400
+
+        # เรียกใช้ฟังก์ชัน update_order_status_db จาก staff_utils.py
+        if update_order_status_db(order_id, new_status):
+            return jsonify({'status': 'success', 'message': 'อัปเดตสถานะออเดอร์สำเร็จ'})
+        else:
+            return jsonify({'status': 'error', 'message': 'ไม่สามารถอัปเดตข้อมูลในฐานข้อมูลได้'}), 500
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/staff/status/update', methods=['POST'])
 @staff_required
@@ -349,14 +366,15 @@ def admin_staff_toggle_status(user_id):
 @staff_required
 def staff_menu_manage():
     try:
-        raw_menus = get_firebase_data('menus')
-        menus = parse_firebase_data(raw_menus)
+        menus = get_all_menus()
+        if not isinstance(menus, list):
+            menus = []
     except Exception as e:
         print(f"Error loading staff menus: {e}")
         menus = []
-        flash("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูลเมนู กรุณาลองใหม่อีกครั้ง", "error") 
+        flash(f"เกิดข้อผิดพลาดในการโหลดข้อมูลเมนู: {str(e)}", "error") 
 
-    return render_template('staff/menu_manage.html', menus=menus)
+    return render_template('staff/menu_manage.html', menus=menus)       
 
 @app.route('/staff/menu/quick-update/<menu_id>', methods=['POST'])
 @staff_required
@@ -372,7 +390,8 @@ def quick_update_menu(menu_id):
     if 'status' in data:
         update_fields['status'] = data['status']
         
-    if patch_firebase_data('menus', menu_id, update_fields):
+    # เรียกใช้ update_menu_item_db() จาก staff_utils เพื่ออัปเดตทั้ง status และ is_available
+    if update_menu_item_db(menu_id, update_fields):
         return jsonify({'status': 'success', 'message': 'ปรับปรุงข้อมูลเมนูสำเร็จ'})
     return jsonify({'status': 'error', 'message': 'ไม่สามารถอัปเดตข้อมูลได้'}), 500
 
@@ -385,40 +404,37 @@ def dashboard_stats():
     today = datetime.now()
     today_str = today.strftime("%Y-%m-%d")
     
-    # หาวันจันทร์ของสัปดาห์ปัจจุบัน (Monday = 0)
     start_of_week = today - timedelta(days=today.weekday())
     
-    # เตรียม Array ยอดขาย 7 วัน [จ, อ, พ, พฤ, ศ, ส, อา]
     weekly_sales = [0.0] * 7
     sales_today = 0.0
     customers_today = 0
     
     orders = get_all_orders()
     
-    if isinstance(orders, dict):
-        for oid, order in orders.items():
-            if isinstance(order, dict):
-                created_at = order.get('created_at', '') # เช่น "2026-10-02 14:30:00"
-                status = order.get('status', '')
+    # แก้ไขให้รองรับทั้งกรณี orders เป็น list หรือ dict
+    order_items = orders if isinstance(orders, list) else (orders.values() if isinstance(orders, dict) else [])
+    
+    for order in order_items:
+        if isinstance(order, dict):
+            created_at = order.get('created_at', '')
+            status = order.get('status', '')
+            
+            if status in ['completed', 'paid']:
+                amount = float(order.get('total_amount', 0))
                 
-                # นับเฉพาะออเดอร์ที่ชำระเงินหรือเสร็จสิ้นแล้ว
-                if status in ['completed', 'paid']:
-                    amount = float(order.get('total_amount', 0))
-                    
-                    # 1. รวมยอดขายของวันนี้
-                    if created_at.startswith(today_str):
-                        sales_today += amount
-                        customers_today += int(order.get('customer_count', 0))
-                    
-                    # 2. คำนวณลงในสัปดาห์นี้
-                    if created_at:
-                        try:
-                            order_date = datetime.strptime(created_at.split(' ')[0], "%Y-%m-%d")
-                            delta_days = (order_date.date() - start_of_week.date()).days
-                            if 0 <= delta_days < 7:
-                                weekly_sales[delta_days] += amount
-                        except Exception:
-                            pass
+                if created_at.startswith(today_str):
+                    sales_today += amount
+                    customers_today += int(order.get('customer_count', 0))
+                
+                if created_at:
+                    try:
+                        order_date = datetime.strptime(created_at.split(' ')[0], "%Y-%m-%d")
+                        delta_days = (order_date.date() - start_of_week.date()).days
+                        if 0 <= delta_days < 7:
+                            weekly_sales[delta_days] += amount
+                    except Exception:
+                        pass
 
     all_users = get_all_users()
     active_staff = sum(
@@ -741,6 +757,9 @@ def customer_checkout():
 
     data = request.get_json() or {}
     
+    # 1. ดึงค่า table_no เพิ่มเติม (กำหนดค่าเริ่มต้นเป็น '-' หรือ 'ไม่ระบุ')
+    table_no = data.get('table_no', '-')
+
     raw_total = data.get('total_amount')
     try:
         total_amount = float(raw_total) if raw_total is not None else 0.0
@@ -761,6 +780,7 @@ def customer_checkout():
 
     try:
         payload = {
+            "table_no": table_no,  # <-- เพิ่มการบันทึกหมายเลขโต๊ะตรงนี้
             "customer_count": customer_count,
             "total_amount": total_amount,
             "payment_method": payment_method,

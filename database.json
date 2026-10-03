@@ -1,30 +1,4 @@
 {
-  "users": {
-    "usr_admin01": {
-      "username": "admin01",
-      "password": "scrypt:32768:8:1$E8PxqDbqpDt4G8nL$d0783a548e308bf2dd94e9cdccaecdc75d66d9863f7847127fdc4d582e9f52ebf397e707f84d81404f169e670ea0e1c0aacee6071d15b9d110e917829b48a5c7",
-      "role": "admin",
-      "is_active": true
-    },
-    "usr_staff01": {
-      "username": "staff01",
-      "password": "scrypt:32768:8:1$a1Mo4db6XPp3MPyE$21a00dd9275dc726ee65974f328aedb724355a01666a74d1ca63617d215ed282846c9997defbbc91940ffe38605343969718b340663b238fe558b1fa8b875c21",
-      "role": "staff",
-      "is_active": true
-    },
-    "usr_staff02": {
-      "username": "staff02",
-      "password": "scrypt:32768:8:1$a1Mo4db6XPp3MPyE$21a00dd9275dc726ee65974f328aedb724355a01666a74d1ca63617d215ed282846c9997defbbc91940ffe38605343969718b340663b238fe558b1fa8b875c21",
-      "role": "staff",
-      "is_active": false
-    },
-    "usr_user01": {
-      "username": "user01",
-      "password": "scrypt:32768:8:1$RijKne4Vnl7WKAoi$6532e96415982da2687d5e58d6e5f4bc8e4913aeaa0ae33ac72faf65ed527e6fabb23c107e3649d954c29b6c49ec0c5afd74eefccdc869d89ea2bedc2244f710",
-      "role": "customer",
-      "is_active": true
-    }
-  },
   "categories": {
     "cat_01": {
       "display_order": 1,
@@ -39,13 +13,13 @@
       "name": "เครื่องดื่ม"
     }
   },
-  "menu_items": {
+  "menus": {
     "menu_01": {
       "category_id": "cat_01",
       "image_url": "https://images.unsplash.com/photo-1612874742237-6526221588e3",
       "is_available": true,
       "name": "สปาเก็ตตี้คาโบนาร่า",
-      "price": 150.0,
+      "price": 150,
       "stock": 20
     },
     "menu_02": {
@@ -53,7 +27,7 @@
       "image_url": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
       "is_available": true,
       "name": "ยำวุ้นเส้นหมูสับ",
-      "price": 80.0,
+      "price": 80,
       "stock": 15
     },
     "menu_03": {
@@ -61,19 +35,180 @@
       "image_url": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd",
       "is_available": true,
       "name": "ชาไทยเย็น",
-      "price": 45.0,
+      "price": 45,
       "stock": 50
     }
   },
   "orders": {
+    "-P2sPtNsHFuZAXVMUdgx": {
+      "created_at": "2026-10-02 00:03:15",
+      "customer_count": 1,
+      "table_no": "1",
+      "items": [
+        {
+          "id": "4",
+          "name": "ยำ",
+          "price": 50,
+          "quantity": 2
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "pending",
+      "total_amount": 100
+    },
+    "-P2sat0u-BgZcx4VTBvG": {
+      "created_at": "2026-10-02 00:55:39",
+      "customer_count": 2,
+      "table_no": "2",
+      "items": [
+        {
+          "id": "4",
+          "name": "ยำ",
+          "price": 50,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "pending",
+      "total_amount": 50
+    },
+    "-P2sayaUJ97Xtn-e8-HW": {
+      "created_at": "2026-10-02 00:56:02",
+      "customer_count": 1,
+      "table_no": "3",
+      "items": [
+        {
+          "id": "4",
+          "name": "ยำ",
+          "price": 50,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "pending",
+      "total_amount": 50
+    },
+    "-P2sueF1lGIT5SrIULkO": {
+      "created_at": "2026-10-01 19:22:01",
+      "customer_count": 1,
+      "table_no": "4",
+      "items": [
+        {
+          "id": "4",
+          "name": "ยำ",
+          "price": 55.5,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "pending",
+      "total_amount": 55.5
+    },
+    "-P2svDfAdWhYMp6BsXSP": {
+      "created_at": "2026-10-01 19:24:30",
+      "customer_count": 1,
+      "table_no": "5",
+      "items": [
+        {
+          "id": "4",
+          "name": "ยำ",
+          "price": 55.5,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "cooking",
+      "total_amount": 55.5
+    },
+    "-P2sz9TUMgwOErkwMM8A": {
+      "created_at": "2026-10-01 19:41:42",
+      "customer_count": 1,
+      "table_no": "6",
+      "items": [
+        {
+          "id": "4",
+          "name": "ยำ",
+          "price": 55.5,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "ready",
+      "total_amount": 55.5
+    },
+    "-P2t4GfOCQlY1YHra7VS": {
+      "created_at": "2026-10-01 20:08:24",
+      "customer_count": 1,
+      "table_no": "7",
+      "items": [
+        {
+          "id": "-P2t3nt7ShG4N4u7Vcpe",
+          "name": "ยำ",
+          "price": 50,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "pending",
+      "total_amount": 50
+    },
+    "-P2t4ojn2wur3_z5F9B2": {
+      "created_at": "2026-10-01 20:10:48",
+      "customer_count": 1,
+      "table_no": "8",
+      "items": [
+        {
+          "id": "-P2t3nt7ShG4N4u7Vcpe",
+          "name": "ยำ",
+          "price": 55,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "pending",
+      "total_amount": 55
+    },
+    "-P2w0kv_IKWpUa0QF8CW": {
+      "created_at": "2026-10-02 09:51:55",
+      "customer_count": 1,
+      "table_no": "9",
+      "items": [
+        {
+          "id": "-P2t3nt7ShG4N4u7Vcpe",
+          "name": "ยำ",
+          "price": 50,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "pending",
+      "total_amount": 50
+    },
+    "-P2wNj2Er3GgkEfVKb6n": {
+      "created_at": "2026-10-02 11:32:17",
+      "customer_count": 1,
+      "table_no": "10",
+      "items": [
+        {
+          "id": "-P2wKhdEIkJ-o7xaNi7M",
+          "name": "ยำ",
+          "price": 50,
+          "qty": 1
+        }
+      ],
+      "payment_method": "เงินสด",
+      "status": "pending",
+      "total_amount": 50
+    },
     "ord_1001": {
       "created_at": "2026-10-01 10:30:00",
       "customer_count": 2,
+      "table_no": "11",
       "items": [
         {
           "id": 1,
           "name": "สปาเก็ตตี้คาโบนาร่า",
-          "price": 150.0,
+          "price": 150,
           "quantity": 2,
           "size": "ปกติ",
           "spice_level": "ไม่เผ็ด"
@@ -81,7 +216,7 @@
         {
           "id": 3,
           "name": "ชาไทยเย็น",
-          "price": 45.0,
+          "price": 45,
           "quantity": 2,
           "size": "ปกติ",
           "spice_level": "ไม่เผ็ด"
@@ -89,16 +224,17 @@
       ],
       "payment_method": "เงินสด",
       "status": "completed",
-      "total_amount": 390.0
+      "total_amount": 390
     },
     "ord_1002": {
       "created_at": "2026-10-01 11:15:20",
       "customer_count": 1,
+      "table_no": "12",
       "items": [
         {
           "id": 2,
           "name": "ยำวุ้นเส้นหมูสับ",
-          "price": 80.0,
+          "price": 80,
           "quantity": 1,
           "size": "ปกติ",
           "spice_level": "เผ็ดมาก"
@@ -106,7 +242,74 @@
       ],
       "payment_method": "โอนเงิน / QR Code",
       "status": "pending",
-      "total_amount": 80.0
+      "total_amount": 80
+    }
+  },
+  "payment_channels": {
+    "-P2wXm9DnH1ZJOsdBB8X": {
+      "account_name": "นายสายสมอน ยองใย",
+      "bank_name": "กสิกร",
+      "is_active": 1,
+      "promptpay_no": "0911111343",
+      "qr_image": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/payments%2Fpayments_20261002121611_77393571.jpg?alt=media"
+    },
+    "-P2wbijoGicy7REkFl1O": {
+      "account_name": "Okok",
+      "bank_name": "พร้อมเย",
+      "is_active": 1,
+      "promptpay_no": "909",
+      "qr_image": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/payments%2Fpayments_20261002123748_e3b2a3f1.jpg?alt=media"
+    },
+    "-P2whjq-E5gBqiUzBBO0": {
+      "account_name": "โซกู้ด",
+      "bank_name": "กสิกร",
+      "is_active": 1,
+      "promptpay_no": "0999999999",
+      "qr_image": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/payments%2Fpayments_20261002130405_0e42c9aa.jpg?alt=media"
+    }
+  },
+  "users": {
+    "-P2shSPjGCQhFWTr-R8G": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$zEECGtbA0zm9fXgn$0066751ca8e8467aef471231b11ba7f138621afa072da2fab48860040183f89bf150eb490a2c8600fbb0a16de05b519d166faccf6242870ddcf596ed10f88002",
+      "role": "staff",
+      "username": "staff01"
+    },
+    "-P2vxpFZO8c3dsmYIvrP": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$isQM3uMLVKjszgCy$1d20397725a13709acca8860fe3e206b4c5e8d24720fffb239356d569742aed32cceca5d43411c6b65485bfc78654d3cf20c9793051e96b6543397c974bdcc2c",
+      "role": "customer",
+      "username": "user02"
+    },
+    "-P2w0WRlnzZ3fInz_m6N": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$mgDE3lt9VFDLsGj3$cda6266fc804b34377e209560854d821a3e48b576c7c41adcf2f1e695f92aaa57df8ed3e2df82a103ef48149c25692a1bc40997ac4c65e11da108b7ee916ea7e",
+      "role": "customer",
+      "username": "test01"
+    },
+    "-P2wHvwZQTBeYLMwyXxW": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$a4THK1pumUf9Sd16$0d01dc310d9752df5fb8cefc07f6d56625420c0e46f6f01d00206168f945c2a9dfc80ec925a238fdb03a349333a5eaa4a3a4105c6954312ec5482424d80d819f",
+      "role": "customer",
+      "username": "Oak"
+    },
+    "-P2wNY1SdyC6Wqk7BkzM": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$Nsvg7IpE5N6JCwxF$6ba95d9c9f0d8dd13f83bba7ef8988ee7ce5de9aa642e88d045671e53abbbc3b94e7dd00376f8bfe61427192837e47b0210180559c721334093e1cfe43d10306",
+      "role": "customer",
+      "username": "Soda"
+    },
+    "usr_admin01": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$E8PxqDbqpDt4G8nL$d0783a548e308bf2dd94e9cdccaecdc75d66d9863f7847127fdc4d582e9f52ebf397e707f84d81404f169e670ea0e1c0aacee6071d15b9d110e917829b48a5c7",
+      "role": "admin",
+      "username": "admin01"
+    },
+    "usr_user01": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$RijKne4Vnl7WKAoi$6532e96415982da2687d5e58d6e5f4bc8e4913aeaa0ae33ac72faf65ed527e6fabb23c107e3649d954c29b6c49ec0c5afd74eefccdc869d89ea2bedc2244f710",
+      "role": "customer",
+      "username": "user01"
     }
   }
 }

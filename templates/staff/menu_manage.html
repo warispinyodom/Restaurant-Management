@@ -37,21 +37,21 @@
                                     </span>
                                 </td>
                                 
-                                <!-- ช่องปรับราคา (ใช้ (menu.price or 0)|abs เพื่อป้องกัน Undefined) -->
+                                <!-- ช่องปรับราคา (แปลงเป็น float ก่อน abs เพื่อป้องกัน Error หากค่าเป็น String) -->
                                 <td>
                                     <div class="input-group input-group-sm" style="max-width: 140px;">
                                         <span class="input-group-text bg-light text-muted border-end-0">฿</span>
                                         <input type="number" class="form-control menu-price border-start-0 ps-1" 
-                                               value="{{ (menu.price or 0)|abs }}" 
+                                               value="{{ (menu.price|float if menu.price is not none else 0)|abs }}" 
                                                step="0.5" min="0">
                                     </div>
                                 </td>
                                 
-                                <!-- ช่องปรับจำนวนคงเหลือ (เช็คค่าว่างก่อนแปลง |abs) -->
+                                <!-- ช่องปรับจำนวนคงเหลือ -->
                                 <td>
                                     <div class="input-group input-group-sm" style="max-width: 140px;">
                                         <input type="number" class="form-control menu-stock" 
-                                               value="{% if menu.stock is not none and menu.stock != '' %}{{ (menu.stock or 0)|abs }}{% endif %}" 
+                                               value="{% if menu.stock is not none and menu.stock != '' %}{{ (menu.stock|int)|abs }}{% endif %}" 
                                                placeholder="ไม่จำกัด" min="0">
                                     </div>
                                 </td>
@@ -59,8 +59,11 @@
                                 <!-- สวิตช์เปิด/ปิด สถานะเมนู -->
                                 <td class="text-center">
                                     <div class="form-check form-switch d-inline-block">
-                                        <input class="form-check-input menu-status-toggle" type="checkbox" role="switch" id="statusSwitch{{ menu.id }}" {% if menu.status == 'available' %}checked{% endif %}>
-                                        <label class="form-check-label small fw-semibold ms-1" for="statusSwitch{{ menu.id }}">
+                                        <input class="form-check-input menu-status-toggle" type="checkbox" role="switch" 
+                                               id="statusSwitch{{ menu.id }}" 
+                                               onchange="toggleStatusText('{{ menu.id }}')"
+                                               {% if menu.status == 'available' %}checked{% endif %}>
+                                        <label class="form-check-label small fw-semibold ms-1" id="statusLabel{{ menu.id }}" for="statusSwitch{{ menu.id }}">
                                             {{ 'พร้อมขาย' if menu.status == 'available' else 'หมด' }}
                                         </label>
                                     </div>
@@ -96,18 +99,36 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+// ฟังก์ชันอัปเดตข้อความ 'พร้อมขาย' / 'หมด' ทันทีที่สลับสวิตช์
+function toggleStatusText(menuId) {
+    const toggle = document.getElementById(`statusSwitch${menuId}`);
+    const label = document.getElementById(`statusLabel${menuId}`);
+    if (toggle && label) {
+        label.textContent = toggle.checked ? 'พร้อมขาย' : 'หมด';
+    }
+}
+
 function saveQuickMenuUpdate(menuId) {
     const row = document.getElementById(`menu-row-${menuId}`);
+    if (!row) return;
+
     let priceInput = row.querySelector('.menu-price');
     let stockInput = row.querySelector('.menu-stock');
     const isAvailable = row.querySelector('.menu-status-toggle').checked;
 
-    // แปลงค่าเป็นจำนวนบวกเสมอในฝั่ง JavaScript
-    let parsedPrice = Math.abs(parseFloat(priceInput.value) || 0);
-    let parsedStock = stockInput.value === '' ? null : Math.abs(parseInt(stockInput.value) || 0);
+    // ตรวจสอบและแปลงค่าตัวเลขให้ถูกต้อง ป้องกันค่า NaN
+    let rawPrice = parseFloat(priceInput.value);
+    let parsedPrice = isNaN(rawPrice) ? 0 : Math.abs(rawPrice);
+
+    let stockVal = stockInput.value.trim();
+    let parsedStock = null;
+    if (stockVal !== '') {
+        let rawStock = parseInt(stockVal, 10);
+        parsedStock = isNaN(rawStock) ? 0 : Math.abs(rawStock);
+    }
 
     priceInput.value = parsedPrice;
-    if (stockInput.value !== '') {
+    if (stockVal !== '') {
         stockInput.value = parsedStock;
     }
 
@@ -122,15 +143,13 @@ function saveQuickMenuUpdate(menuId) {
     })
     .then(res => res.json())
     .then(data => {
-        if(data.status === 'success') {
+        if (data.status === 'success') {
             Swal.fire({
                 title: 'บันทึกสำเร็จ!',
                 text: 'อัปเดตข้อมูลเมนูอาหารเรียบร้อยแล้ว',
                 icon: 'success',
-                timer: 1500,
+                timer: 1200,
                 showConfirmButton: false
-            }).then(() => {
-                location.reload();
             });
         } else {
             Swal.fire({
