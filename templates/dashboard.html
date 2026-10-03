@@ -1,74 +1,117 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Dashboard <span class="badge bg-primary fs-6">{{ role }}</span></h2>
-<p>ยินดีต้อนรับ, {{ username }}</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Dashboard <span class="badge bg-primary fs-6 ms-2">{{ role }}</span></h3>
+        <p class="text-muted mb-0 small">ยินดีต้อนรับ, {{ username }}</p>
+    </div>
+</div>
 
-<div class="row mt-4">
+<!-- Cards สรุปสถิติ -->
+<div class="row g-3">
     <div class="col-md-4">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-body">
-                <h5 class="card-title">ยอดขายวันนี้</h5>
-                <h3 id="sales-today">฿0.00</h3>
+        <div class="card border-0 shadow-sm bg-success text-white rounded-3">
+            <div class="card-body p-3">
+                <span class="small opacity-75">ยอดขายวันนี้</span>
+                <h3 class="fw-bold mb-0 mt-1" id="sales-today">฿0.00</h3>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-white bg-info mb-3">
-            <div class="card-body">
-                <h5 class="card-title">ลูกค้าวันนี้</h5>
-                <h3 id="customers-today">0 คน</h3>
+        <div class="card border-0 shadow-sm bg-info text-white rounded-3">
+            <div class="card-body p-3">
+                <span class="small opacity-75">ลูกค้าวันนี้</span>
+                <h3 class="fw-bold mb-0 mt-1" id="customers-today">0 คน</h3>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-body">
-                <h5 class="card-title">พนักงานที่ปฏิบัติงาน</h5>
-                <h3 id="active-staff">0 คน</h3>
+        <div class="card border-0 shadow-sm bg-warning text-dark rounded-3">
+            <div class="card-body p-3">
+                <span class="small opacity-75">พนักงานที่ปฏิบัติงาน</span>
+                <h3 class="fw-bold mb-0 mt-1" id="active-staff">0 คน</h3>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card mt-4">
+<!-- Card แสดงกราฟ -->
+<div class="card border-0 shadow-sm rounded-3 mt-4">
+    <div class="card-header bg-white border-0 pt-3 pb-0">
+        <h5 class="fw-bold text-dark mb-0">ยอดขายรายวันในสัปดาห์นี้</h5>
+    </div>
     <div class="card-body">
-        <canvas id="salesChart" height="100"></canvas>
+        <div style="position: relative; height: 320px; width: 100%;">
+            <canvas id="salesChart"></canvas>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<!-- นำเข้า Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     const userRole = "{{ role }}";
-    
+    let salesChart = null;
+
+    // 1. สร้างตัวแปรเริ่มต้นสำหรับ Chart
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสฯ', 'ศุกร์', 'เสาร์', 'อาทิตย์'],
+            datasets: [{
+                label: 'ยอดขาย (บาท)',
+                data: [0, 0, 0, 0, 0, 0, 0],
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2,
+                pointBackgroundColor: '#0d6efd',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '฿' + value.toLocaleString('th-TH');
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. ดึงข้อมูลจาก API และอัปเดต Dashboard
     if (userRole === 'admin') {
         function fetchDashboardStats() {
             fetch('/api/admin/dashboard_stats')
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('sales-today').innerText = '฿' + data.sales_today.toLocaleString('th-TH', {minimumFractionDigits: 2});
-                    document.getElementById('customers-today').innerText = data.customers_today.toLocaleString('th-TH') + ' คน';
-                    document.getElementById('active-staff').innerText = data.active_staff.toLocaleString('th-TH') + ' คน';
-                })
-                .catch(err => console.error(err));
-        }
-        fetchDashboardStats();
-        setInterval(fetchDashboardStats, 10000); // อัปเดตทุก 10 วินาที
-    }
+                    // อัปเดตการ์ดสรุปตัวเลข
+                    document.getElementById('sales-today').innerText = '฿' + (data.sales_today || 0).toLocaleString('th-TH', {minimumFractionDigits: 2});
+                    document.getElementById('customers-today').innerText = (data.customers_today || 0).toLocaleString('th-TH') + ' คน';
+                    document.getElementById('active-staff').innerText = (data.active_staff || 0).toLocaleString('th-TH') + ' คน';
 
-    // ตัวอย่างกราฟ (Chart.js)
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสฯ', 'ศุกร์', 'เสาร์', 'อาทิตย์'],
-            datasets: [{
-                label: 'ยอดขายสัปดาห์นี้',
-                data: [1200, 1900, 3000, 5000, 2000, 3000, 4500],
-                borderColor: 'blue',
-                tension: 0.1
-            }]
+                    // อัปเดตกราฟด้วยข้อมูลจริงจาก Firebase
+                    if (data.weekly_sales && salesChart) {
+                        salesChart.data.datasets[0].data = data.weekly_sales;
+                        salesChart.update();
+                    }
+                })
+                .catch(err => console.error('Dashboard Stats Fetch Error:', err));
         }
-    });
+
+        fetchDashboardStats();
+        setInterval(fetchDashboardStats, 10000); // อัปเดตข้อมูลทุก 10 วินาที
+    }
 </script>
 {% endblock %}

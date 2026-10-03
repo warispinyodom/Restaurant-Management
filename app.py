@@ -5,7 +5,7 @@ import urllib.parse
 import json
 import uuid
 from functools import wraps
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -382,20 +382,43 @@ def quick_update_menu(menu_id):
 @app.route('/api/admin/dashboard_stats')
 @admin_required
 def dashboard_stats():
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    orders = get_all_orders()
+    today = datetime.now()
+    today_str = today.strftime("%Y-%m-%d")
     
+    # หาวันจันทร์ของสัปดาห์ปัจจุบัน (Monday = 0)
+    start_of_week = today - timedelta(days=today.weekday())
+    
+    # เตรียม Array ยอดขาย 7 วัน [จ, อ, พ, พฤ, ศ, ส, อา]
+    weekly_sales = [0.0] * 7
     sales_today = 0.0
     customers_today = 0
+    
+    orders = get_all_orders()
     
     if isinstance(orders, dict):
         for oid, order in orders.items():
             if isinstance(order, dict):
-                created_at = order.get('created_at', '')
+                created_at = order.get('created_at', '') # เช่น "2026-10-02 14:30:00"
                 status = order.get('status', '')
-                if created_at.startswith(today_str) and status in ['completed', 'paid']:
-                    sales_today += float(order.get('total_amount', 0))
-                    customers_today += int(order.get('customer_count', 0))
+                
+                # นับเฉพาะออเดอร์ที่ชำระเงินหรือเสร็จสิ้นแล้ว
+                if status in ['completed', 'paid']:
+                    amount = float(order.get('total_amount', 0))
+                    
+                    # 1. รวมยอดขายของวันนี้
+                    if created_at.startswith(today_str):
+                        sales_today += amount
+                        customers_today += int(order.get('customer_count', 0))
+                    
+                    # 2. คำนวณลงในสัปดาห์นี้
+                    if created_at:
+                        try:
+                            order_date = datetime.strptime(created_at.split(' ')[0], "%Y-%m-%d")
+                            delta_days = (order_date.date() - start_of_week.date()).days
+                            if 0 <= delta_days < 7:
+                                weekly_sales[delta_days] += amount
+                        except Exception:
+                            pass
 
     all_users = get_all_users()
     active_staff = sum(
@@ -406,9 +429,10 @@ def dashboard_stats():
     return jsonify({
         'sales_today': round(sales_today, 2),
         'customers_today': customers_today,
-        'active_staff': active_staff
+        'active_staff': active_staff,
+        'weekly_sales': [round(x, 2) for x in weekly_sales]
     })
-
+    
 # ==========================================
 # ADMIN: MENU MANAGEMENT
 # ==========================================
