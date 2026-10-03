@@ -1,24 +1,47 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
+    /* Utility Font Sizes สำหรับมือถือ */
+    .fs-7 { font-size: 0.78rem !important; }
+    .fs-8 { font-size: 0.70rem !important; }
+
+    /* ป้องกันแถบลอยบดบังการ์ดอาหารแถวสุดท้าย */
+    .menu-page-wrapper {
+        padding-bottom: 90px !important;
+    }
+
     /* สไตล์การ์ดอาหาร Responsive */
     .menu-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: none;
-        border-radius: 16px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 14px;
         overflow: hidden;
         background: #ffffff;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
     .menu-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08) !important;
     }
+    
+    /* สไตล์เมื่อการ์ดถูกเลือก */
+    .menu-card.selected-card {
+        border: 2px solid #0d6efd !important;
+        background-color: #f0f7ff !important;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2) !important;
+    }
+
+    /* ภาพประกอบเมนู */
     .menu-img-wrapper {
         position: relative;
         width: 100%;
-        padding-top: 75%; /* อัตราส่วน 4:3 */
+        padding-top: 72%; /* อัตราส่วนสมดุล */
         overflow: hidden;
         background-color: #f8f9fa;
+        flex-shrink: 0;
     }
     .menu-img {
         position: absolute;
@@ -32,246 +55,425 @@
     .menu-card:hover .menu-img {
         transform: scale(1.05);
     }
+
+    /* Checkbox Overlay ตำแหน่งมุมซ้ายบน */
+    .card-checkbox-wrapper {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(4px);
+        border-radius: 8px;
+        padding: 3px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .menu-select-checkbox {
+        width: 1.1rem;
+        height: 1.1rem;
+        cursor: pointer;
+        margin: 0 !important;
+        accent-color: #0d6efd;
+    }
+
+    /* Badge บนภาพ */
     .status-badge-overlay {
         position: absolute;
-        top: 8px;
-        left: 8px;
+        top: 6px;
+        right: 6px;
         z-index: 2;
     }
     .price-badge-overlay {
         position: absolute;
-        bottom: 8px;
-        right: 8px;
+        bottom: 6px;
+        right: 6px;
         z-index: 2;
-        background: rgba(0, 0, 0, 0.75);
+        background: rgba(15, 23, 42, 0.85);
         backdrop-filter: blur(4px);
-        color: #fff;
+        color: #ffffff;
         font-weight: 700;
-        padding: 3px 10px;
+        padding: 2px 8px;
         border-radius: 20px;
-        font-size: 0.85rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
     }
     @media (min-width: 576px) {
-        .status-badge-overlay { top: 10px; left: 10px; }
-        .price-badge-overlay { bottom: 10px; right: 10px; font-size: 0.95rem; padding: 4px 12px; }
+        .card-checkbox-wrapper { top: 8px; left: 8px; padding: 4px; }
+        .menu-select-checkbox { width: 1.15rem; height: 1.15rem; }
+        .status-badge-overlay { top: 8px; right: 8px; }
+        .price-badge-overlay { bottom: 8px; right: 8px; font-size: 0.875rem; padding: 4px 12px; }
     }
+
     .out-of-stock-overlay {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(0, 0, 0, 0.45);
         z-index: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 0.95rem;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.8rem;
         backdrop-filter: blur(2px);
     }
     .out-of-stock-img {
         filter: grayscale(80%);
     }
 
-    /* ซ่อน Scrollbar ของ Filter Pills และรองรับการปัดบนมือถือ */
-    .category-pills-scroll {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
+    /* ควบคุมบรรทัดของชื่อรายการอาหารให้เท่ากัน */
+    .menu-title-text {
+        font-size: 0.825rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-height: 2.5em;
+        line-height: 1.25em;
+        margin-bottom: 0.4rem;
     }
-    .category-pills-scroll::-webkit-scrollbar {
+    @media (min-width: 576px) {
+        .menu-title-text {
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    /* แถบเลือกหมวดหมู่แนวนอน */
+    .category-scroll-wrapper {
+        display: flex;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+    .category-scroll-wrapper::-webkit-scrollbar {
         display: none;
     }
 
-    /* ปุ่มการ์ดอาหารบนมือถือ */
+    /* ปุ่มจัดการการ์ดอาหาร */
     .btn-card-action {
-        font-size: 0.8rem;
-        padding: 5px 8px;
+        font-size: 0.72rem;
+        padding: 4px 6px;
+        line-height: 1.2;
     }
     @media (min-width: 576px) {
         .btn-card-action {
-            font-size: 0.875rem;
-            padding: 6px 12px;
+            font-size: 0.825rem;
+            padding: 6px 10px;
         }
+    }
+
+    /* แถบจัดการแบบกลุ่ม Floating Capsule Bar (ปรับปรุงให้ Responsive ไม่ล้นจอ) */
+    .bulk-toolbar {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(10px);
+        color: #ffffff;
+        border-radius: 50px;
+        padding: 6px 12px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+        width: calc(100% - 24px); /* กำหนดความกว้างไม่ให้ล้นขอบจอมือถือ */
+        max-width: 600px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: fadeInUp 0.25s ease-out;
+    }
+    @media (min-width: 576px) {
+        .bulk-toolbar {
+            padding: 8px 18px;
+            bottom: 20px;
+            width: 92%;
+        }
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translate(-50%, 20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
     }
 </style>
 
-<!-- Header & Add Button -->
-<div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
-    <div>
-        <h3 class="fw-bold mb-1 fs-4 fs-md-3">จัดการเมนูอาหาร</h3>
-        <p class="text-muted mb-0 small">เพิ่ม แก้ไข ค้นหา และกำหนดสถานะเมนูอาหารทั้งหมดในร้าน</p>
+<div class="menu-page-wrapper">
+    <!-- Header & Add Button -->
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
+        <div>
+            <h3 class="fw-bold mb-1 fs-5 fs-sm-4 fs-md-3 text-dark">จัดการเมนูอาหาร</h3>
+            <p class="text-muted mb-0 small">เพิ่ม แก้ไข ค้นหา และกำหนดสถานะเมนูอาหารทั้งหมดในร้าน</p>
+        </div>
+        <button class="btn btn-primary shadow-sm px-3 px-sm-4 py-2 rounded-pill fw-semibold w-100 w-sm-auto text-nowrap" data-bs-toggle="modal" data-bs-target="#addMenuModal">
+            <i class="fas fa-plus me-1"></i> เพิ่มเมนูใหม่
+        </button>
     </div>
-    <button class="btn btn-primary shadow-sm px-3 px-sm-4 py-2 rounded-pill fw-semibold w-100 w-sm-auto text-nowrap" data-bs-toggle="modal" data-bs-target="#addMenuModal">
-        <i class="fas fa-plus me-1"></i> เพิ่มเมนูใหม่
-    </button>
-</div>
 
-<!-- ================= Filter & Search Bar Section ================= -->
-<div class="card border-0 shadow-sm rounded-4 mb-4 bg-white p-3">
-    <!-- ค้นหาด้วยชื่อ / เลือกสถานะ / เรียงลำดับ -->
-    <div class="row g-2 mb-3">
-        <!-- ช่องค้นหาชื่อเมนู -->
-        <div class="col-12 col-md-5">
-            <div class="input-group">
-                <span class="input-group-text bg-light border-end-0 rounded-start-pill ps-3 text-secondary">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input type="text" id="searchMenuInput" class="form-control bg-light border-start-0 rounded-end-pill py-2 pe-3 shadow-none text-truncate" placeholder="ค้นหาชื่อเมนูอาหาร...">
+    <!-- ================= Bulk Action Toolbar (แถบควบคุมเมื่อเลือกหลายรายการ สไตล์ Capsule ลอยด้านล่าง) ================= -->
+    <div class="bulk-toolbar d-none" id="bulkActionToolbar">
+        <div class="d-flex align-items-center justify-content-between gap-1 gap-sm-2">
+            <!-- ด้านซ้าย: Checkbox เลือกทั้งหมด + จำนวนที่เลือก -->
+            <div class="d-flex align-items-center gap-1 gap-sm-2 flex-shrink-1 overflow-hidden">
+                <div class="form-check m-0 d-flex align-items-center">
+                    <input class="form-check-input menu-select-checkbox" type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)">
+                    <label class="form-check-label fw-bold text-white fs-8 fs-sm-7 ms-1 text-nowrap" for="selectAllCheckbox">
+                        เลือกทั้งหมด
+                    </label>
+                </div>
+                <span class="badge bg-primary rounded-pill px-2 py-1 fs-8 fs-sm-7 fw-semibold text-nowrap" id="selectedCountBadge">เลือกอยู่ 0 รายการ</span>
+            </div>
+
+            <!-- ด้านขวา: ปุ่มจัดการแก้ไข / ลบ / ปิด -->
+            <div class="d-flex align-items-center gap-1 ms-auto flex-shrink-0">
+                <button type="button" class="btn btn-warning btn-sm rounded-pill fw-bold text-dark text-nowrap px-2 px-sm-3 fs-8 fs-sm-7" data-bs-toggle="modal" data-bs-target="#batchEditModal">
+                    <i class="fas fa-pen-to-square me-1"></i><span class="d-inline">แก้ไข</span>
+                </button>
+                <button type="button" class="btn btn-danger btn-sm rounded-pill fw-bold text-nowrap px-2 px-sm-3 fs-8 fs-sm-7" onclick="submitBatchDelete()">
+                    <i class="fas fa-trash-can me-1"></i><span class="d-inline">ลบ</span>
+                </button>
+                <button type="button" class="btn btn-link text-white-50 text-decoration-none p-1 ms-1 fs-6" onclick="deselectAll()" title="ยกเลิกการเลือก">
+                    <i class="fas fa-xmark text-white"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Filter & Search Bar Section ================= -->
+    <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white p-2 p-sm-3">
+        <div class="row g-2 mb-2 mb-sm-3 align-items-center">
+            <!-- ช่องค้นหาชื่อเมนู -->
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0 rounded-start-pill ps-3 text-secondary">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="searchMenuInput" class="form-control bg-light border-start-0 rounded-end-pill py-2 pe-3 shadow-none text-truncate fs-7" placeholder="ค้นหาชื่อเมนูอาหาร...">
+                </div>
+            </div>
+
+            <!-- ตัวกรองสถานะ -->
+            <div class="col-6 col-md-3">
+                <select id="filterStatusSelect" class="form-select form-select-sm rounded-pill py-2 px-2 px-sm-3 shadow-none border-light bg-light text-truncate fs-7">
+                    <option value="all">สถานะ: ทั้งหมด</option>
+                    <option value="available">🟢 พร้อมขาย</option>
+                    <option value="out_of_stock">🔴 สินค้าหมด</option>
+                </select>
+            </div>
+
+            <!-- ตัวเรียงลำดับราคา -->
+            <div class="col-6 col-md-4">
+                <select id="sortSelect" class="form-select form-select-sm rounded-pill py-2 px-2 px-sm-3 shadow-none border-light bg-light text-truncate fs-7">
+                    <option value="default">การจัดเรียง: ดั้งเดิม</option>
+                    <option value="price_asc">ราคา: น้อย ➔ มาก</option>
+                    <option value="price_desc">ราคา: มาก ➔ น้อย</option>
+                    <option value="name_asc">ชื่อเมนู: A-Z / ก-ฮ</option>
+                </select>
             </div>
         </div>
 
-        <!-- ตัวกรองสถานะ -->
-        <div class="col-6 col-md-3">
-            <select id="filterStatusSelect" class="form-select rounded-pill py-2 shadow-none border-light bg-light small text-truncate">
-                <option value="all">สถานะ: ทั้งหมด</option>
-                <option value="available">🟢 พร้อมขาย</option>
-                <option value="out_of_stock">🔴 สินค้าหมด</option>
-            </select>
-        </div>
+        <!-- แถบเลือกหมวดหมู่ Quick Category Filter -->
+        <div class="d-flex align-items-center gap-2 pt-1">
+            <span class="small fw-bold text-muted text-nowrap flex-shrink-0 fs-7">
+                <i class="fas fa-filter text-primary me-1"></i> หมวดหมู่:
+            </span>
+            <div class="category-scroll-wrapper flex-grow-1">
+                <div class="btn-group gap-1 flex-nowrap" role="group">
+                    <input type="radio" class="btn-check" name="filterCategory" id="f_cat_all" value="all" checked>
+                    <label class="btn btn-sm btn-outline-primary rounded-pill px-2 px-sm-3 py-1 fs-7 text-nowrap" for="f_cat_all">ทั้งหมด</label>
 
-        <!-- ตัวเรียงลำดับราคา -->
-        <div class="col-6 col-md-4">
-            <select id="sortSelect" class="form-select rounded-pill py-2 shadow-none border-light bg-light small text-truncate">
-                <option value="default">การจัดเรียง: ดั้งเดิม</option>
-                <option value="price_asc">ราคา: น้อย ➔ มาก</option>
-                <option value="price_desc">ราคา: มาก ➔ น้อย</option>
-                <option value="name_asc">ชื่อเมนู: A-Z / ก-ฮ</option>
-            </select>
-        </div>
-    </div>
+                    <input type="radio" class="btn-check" name="filterCategory" id="f_cat_main" value="อาหารจานหลัก">
+                    <label class="btn btn-sm btn-outline-primary rounded-pill px-2 px-sm-3 py-1 fs-7 text-nowrap" for="f_cat_main">🍲 อาหารจานหลัก</label>
 
-    <!-- แถบเลือกหมวดหมู่ Quick Category Filter -->
-    <div class="d-flex align-items-center gap-2 overflow-auto category-pills-scroll pb-1">
-        <span class="small fw-bold text-muted me-1 text-nowrap"><i class="fas fa-filter text-primary me-1"></i> หมวดหมู่:</span>
-        <div class="btn-group gap-1 flex-nowrap" role="group">
-            <input type="radio" class="btn-check" name="filterCategory" id="f_cat_all" value="all" checked>
-            <label class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-nowrap" for="f_cat_all">ทั้งหมด</label>
+                    <input type="radio" class="btn-check" name="filterCategory" id="f_cat_snack" value="ยำ / ของว่างทานเล่น">
+                    <label class="btn btn-sm btn-outline-primary rounded-pill px-2 px-sm-3 py-1 fs-7 text-nowrap" for="f_cat_snack">🥗 ยำ / ของว่าง</label>
 
-            <input type="radio" class="btn-check" name="filterCategory" id="f_cat_main" value="อาหารจานหลัก">
-            <label class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-nowrap" for="f_cat_main">🍲 อาหารจานหลัก</label>
+                    <input type="radio" class="btn-check" name="filterCategory" id="f_cat_shabu" value="ชาบู / สุกี้ / ปิ้งย่าง">
+                    <label class="btn btn-sm btn-outline-primary rounded-pill px-2 px-sm-3 py-1 fs-7 text-nowrap" for="f_cat_shabu">🥩 ชาบู / ปิ้งย่าง</label>
 
-            <input type="radio" class="btn-check" name="filterCategory" id="f_cat_snack" value="ยำ / ของว่างทานเล่น">
-            <label class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-nowrap" for="f_cat_snack">🥗 ยำ / ของว่าง</label>
+                    <input type="radio" class="btn-check" name="filterCategory" id="f_cat_drink" value="เครื่องดื่ม">
+                    <label class="btn btn-sm btn-outline-primary rounded-pill px-2 px-sm-3 py-1 fs-7 text-nowrap" for="f_cat_drink">🥤 เครื่องดื่ม</label>
 
-            <input type="radio" class="btn-check" name="filterCategory" id="f_cat_shabu" value="ชาบู / สุกี้ / ปิ้งย่าง">
-            <label class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-nowrap" for="f_cat_shabu">🥩 ชาบู / ปิ้งย่าง</label>
+                    <input type="radio" class="btn-check" name="filterCategory" id="f_cat_dessert" value="ของหวาน">
+                    <label class="btn btn-sm btn-outline-primary rounded-pill px-2 px-sm-3 py-1 fs-7 text-nowrap" for="f_cat_dessert">🍨 ของหวาน</label>
 
-            <input type="radio" class="btn-check" name="filterCategory" id="f_cat_drink" value="เครื่องดื่ม">
-            <label class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-nowrap" for="f_cat_drink">🥤 เครื่องดื่ม</label>
+                    <input type="radio" class="btn-check" name="filterCategory" id="f_cat_special" value="เมนูแนะนำ / โปรโมชั่น">
+                    <label class="btn btn-sm btn-outline-primary rounded-pill px-2 px-sm-3 py-1 fs-7 text-nowrap" for="f_cat_special">🌟 เมนูแนะนำ</label>
 
-            <input type="radio" class="btn-check" name="filterCategory" id="f_cat_dessert" value="ของหวาน">
-            <label class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-nowrap" for="f_cat_dessert">🍨 ของหวาน</label>
-
-            <input type="radio" class="btn-check" name="filterCategory" id="f_cat_special" value="เมนูแนะนำ / โปรโมชั่น">
-            <label class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-nowrap" for="f_cat_special">🌟 เมนูแนะนำ</label>
-
-            <input type="radio" class="btn-check" name="filterCategory" id="f_cat_other" value="อื่น ๆ">
-            <label class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-nowrap" for="f_cat_other">📦 อื่น ๆ</label>
+                    <input type="radio" class="btn-check" name="filterCategory" id="f_cat_other" value="อื่น ๆ">
+                    <label class="btn btn-sm btn-outline-primary rounded-pill px-2 px-sm-3 py-1 fs-7 text-nowrap" for="f_cat_other">📦 อื่น ๆ</label>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- ================= แสดงรายการเมนูแบบ Grid Card ================= -->
-<div class="row g-2 g-sm-3 g-md-4" id="menuCardsContainer">
-    {% for menu in menus %}
-    <div class="col-6 col-sm-6 col-md-4 col-lg-3 menu-item-col" 
-         data-name="{{ menu.name|lower }}" 
-         data-category="{{ menu.category }}" 
-         data-status="{{ menu.status }}" 
-         data-price="{{ menu.price|abs }}">
-        <div class="card h-100 menu-card shadow-sm">
-            <!-- ส่วนรูปภาพอาหาร -->
-            <div class="menu-img-wrapper">
-                <!-- สถานะ พร้อมขาย / หมด -->
-                <div class="status-badge-overlay">
-                    {% if menu.status == 'available' %}
-                    <span class="badge bg-success shadow-sm px-2 py-1"><i class="fas fa-circle me-1" style="font-size: 6px;"></i>พร้อมขาย</span>
+    <!-- ================= แสดงรายการเมนูแบบ Grid Card ================= -->
+    <div class="row g-2 g-sm-3 g-md-4 align-items-stretch" id="menuCardsContainer">
+        {% for menu in menus %}
+        <div class="col-6 col-sm-6 col-md-4 col-lg-3 menu-item-col" 
+             data-id="{{ menu.id }}"
+             data-name="{{ menu.name|lower }}" 
+             data-category="{{ menu.category }}" 
+             data-status="{{ menu.status }}" 
+             data-price="{{ menu.price|abs }}">
+            <div class="card menu-card shadow-sm position-relative" id="menuCard_{{ menu.id }}">
+                
+                <!-- Checkbox เลือกเมนูสำหรับ Batch Operations -->
+                <div class="card-checkbox-wrapper">
+                    <div class="form-check m-0 p-0 d-flex align-items-center justify-content-center">
+                        <input class="form-check-input menu-select-checkbox item-checkbox" type="checkbox" value="{{ menu.id }}" onchange="updateBulkActionToolbar()">
+                    </div>
+                </div>
+
+                <!-- ส่วนรูปภาพอาหาร -->
+                <div class="menu-img-wrapper">
+                    <div class="status-badge-overlay">
+                        {% if menu.status == 'available' %}
+                        <span class="badge bg-success shadow-sm px-1.5 px-sm-2 py-1 fs-8 fs-sm-7"><i class="fas fa-circle me-1" style="font-size: 5px;"></i>พร้อมขาย</span>
+                        {% else %}
+                        <span class="badge bg-danger shadow-sm px-1.5 px-sm-2 py-1 fs-8 fs-sm-7"><i class="fas fa-times-circle me-1"></i>หมด</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="price-badge-overlay">
+                        ฿{{ menu.price|abs }}
+                    </div>
+
+                    {% if menu.image_file %}
+                    <img src="{{ menu.image_file }}" alt="{{ menu.name }}" 
+                         class="menu-img {% if menu.status != 'available' %}out-of-stock-img{% endif %}">
                     {% else %}
-                    <span class="badge bg-danger shadow-sm px-2 py-1"><i class="fas fa-times-circle me-1"></i>สินค้าหมด</span>
+                    <img src="{{ url_for('static', filename='images/default-image.png') }}" alt="No Image" 
+                         class="menu-img {% if menu.status != 'available' %}out-of-stock-img{% endif %}">
+                    {% endif %}
+
+                    {% if menu.status != 'available' %}
+                    <div class="out-of-stock-overlay">
+                        <span><i class="fas fa-ban me-1"></i> หมดชั่วคราว</span>
+                    </div>
                     {% endif %}
                 </div>
 
-                <!-- ป้ายราคา -->
-                <div class="price-badge-overlay">
-                    ฿{{ menu.price|abs }}
-                </div>
-
-                {% if menu.image_file %}
-                <img src="{{ menu.image_file }}" alt="{{ menu.name }}" 
-                     class="menu-img {% if menu.status != 'available' %}out-of-stock-img{% endif %}">
-                {% else %}
-                <img src="{{ url_for('static', filename='images/default-image.png') }}" alt="No Image" 
-                     class="menu-img {% if menu.status != 'available' %}out-of-stock-img{% endif %}">
-                {% endif %}
-
-                {% if menu.status != 'available' %}
-                <div class="out-of-stock-overlay">
-                    <span><i class="fas fa-ban me-1"></i> หมดชั่วคราว</span>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- รายละเอียดเมนู -->
-            <div class="card-body p-2 p-sm-3 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="mb-1">
-                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 text-truncate max-w-100" style="font-size: 0.75rem;">{{ menu.category }}</span>
+                <!-- รายละเอียดเมนู -->
+                <div class="card-body p-2 p-sm-3 d-flex flex-column justify-content-between flex-grow-1">
+                    <div>
+                        <div class="mb-1">
+                            <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 text-truncate max-w-100 fs-8 fs-sm-7">{{ menu.category }}</span>
+                        </div>
+                        <div class="menu-title-text" title="{{ menu.name }}">{{ menu.name }}</div>
                     </div>
-                    <h6 class="fw-bold text-dark text-truncate mb-2 fs-6" title="{{ menu.name }}">{{ menu.name }}</h6>
+
+                    <!-- ปุ่มจัดการ แก้ไข / ลบ -->
+                    <div class="pt-2 border-top mt-auto d-flex gap-1">
+                        <button type="button"
+                            class="btn btn-card-action btn-outline-warning text-dark fw-semibold flex-fill rounded-pill d-inline-flex align-items-center justify-content-center text-nowrap"
+                            data-bs-toggle="modal" data-bs-target="#editMenuModal{{ menu.id }}">
+                            <i class="fas fa-pen-to-square me-1"></i> แก้ไข
+                        </button>
+                        <button type="button"
+                            class="btn btn-card-action btn-outline-danger fw-semibold flex-fill rounded-pill d-inline-flex align-items-center justify-content-center text-nowrap"
+                            onclick="deleteItem('/admin/menu/delete/{{ menu.id }}')">
+                            <i class="fas fa-trash-can me-1"></i> ลบ
+                        </button>
+                    </div>
                 </div>
+            </div>
+        </div>
+        {% endfor %}
 
-                <!-- ปุ่มจัดการ แก้ไข / ลบ -->
-                <div class="pt-2 border-top mt-2 d-flex gap-1 gap-sm-2">
-                    <button type="button"
-                        class="btn btn-card-action btn-outline-warning text-dark fw-semibold flex-fill rounded-pill d-inline-flex align-items-center justify-content-center text-nowrap"
-                        data-bs-toggle="modal" data-bs-target="#editMenuModal{{ menu.id }}">
-                        <i class="fas fa-pen-to-square me-1"></i> แก้ไข
-                    </button>
-                    <button type="button"
-                        class="btn btn-card-action btn-outline-danger fw-semibold flex-fill rounded-pill d-inline-flex align-items-center justify-content-center text-nowrap"
-                        onclick="deleteItem('/admin/menu/delete/{{ menu.id }}')">
-                        <i class="fas fa-trash-can me-1"></i> ลบ
+        <!-- กล่องแสดงผลเมื่อค้นหาไม่พบรายการ -->
+        <div class="col-12 d-none" id="noSearchResults">
+            <div class="card border-0 shadow-sm rounded-4 text-center py-5 bg-white">
+                <div class="card-body text-muted p-3">
+                    <i class="fas fa-search-minus fa-3x mb-3 text-secondary opacity-50"></i>
+                    <h5 class="fw-bold text-dark fs-6 fs-sm-5">ไม่พบเมนูอาหารที่ตรงกับเงื่อนไข</h5>
+                    <p class="small mb-3">ลองค้นหาด้วยคำอื่น หรือกดปุ่มรีเซ็ตการค้นหา</p>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="resetFilters()">
+                        <i class="fas fa-rotate-left me-1"></i> รีเซ็ตเงื่อนไขค้นหา
                     </button>
                 </div>
             </div>
         </div>
-    </div>
-    {% endfor %}
 
-    <!-- กล่องแสดงผลเมื่อค้นหาไม่พบรายการ -->
-    <div class="col-12 d-none" id="noSearchResults">
-        <div class="card border-0 shadow-sm rounded-4 text-center py-5 bg-white">
-            <div class="card-body text-muted p-3">
-                <i class="fas fa-search-minus fa-3x mb-3 text-secondary opacity-50"></i>
-                <h5>ไม่พบเมนูอาหารที่ตรงกับเงื่อนไข</h5>
-                <p class="small mb-3">ลองค้นหาด้วยคำอื่น หรือกดปุ่มรีเซ็ตการค้นหา</p>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="resetFilters()">
-                    <i class="fas fa-rotate-left me-1"></i> รีเซ็ตเงื่อนไขค้นหา
-                </button>
+        {% if not menus %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+                <div class="card-body text-muted p-3">
+                    <i class="fas fa-utensils fa-3x mb-3 text-secondary opacity-50"></i>
+                    <h5 class="fw-bold text-dark fs-6 fs-sm-5">ยังไม่มีรายการเมนูอาหาร</h5>
+                    <p class="small mb-3">กดปุ่ม "เพิ่มเมนูใหม่" เพื่อเริ่มสร้างรายการอาหารแรกของคุณ</p>
+                    <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addMenuModal">
+                        <i class="fas fa-plus me-1"></i> เพิ่มเมนูใหม่
+                    </button>
+                </div>
             </div>
         </div>
+        {% endif %}
     </div>
-
-    {% if not menus %}
-    <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
-            <div class="card-body text-muted p-3">
-                <i class="fas fa-utensils fa-3x mb-3 text-secondary opacity-50"></i>
-                <h5>ยังไม่มีรายการเมนูอาหาร</h5>
-                <p class="small mb-3">กดปุ่ม "เพิ่มเมนูใหม่" เพื่อเริ่มสร้างรายการอาหารแรกของคุณ</p>
-                <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addMenuModal">
-                    <i class="fas fa-plus me-1"></i> เพิ่มเมนูใหม่
-                </button>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </div>
 
-<!-- Edit Menu Modals -->
+<!-- ================= Modal: แก้ไขรายการแบบกลุ่ม (Batch Edit Modal) ================= -->
+<div class="modal fade" id="batchEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white p-3 border-0">
+                <h5 class="modal-title fw-bold fs-6">
+                    <i class="fas fa-layer-group text-warning me-1"></i> แก้ไขรายการที่เลือกพร้อมกัน
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="batchEditForm" onsubmit="submitBatchEdit(event)">
+                <div class="modal-body p-3 p-md-4 bg-light">
+                    <div class="alert alert-info rounded-3 small mb-3">
+                        <i class="fas fa-info-circle me-1"></i> กำลังปรับปรุง <strong id="batchEditItemCount">0</strong> รายการพร้อมกัน (เว้นว่างในหัวข้อที่ไม่ต้องการเปลี่ยนแปลง)
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">เปลี่ยนหมวดหมู่ใหม่</label>
+                        <select name="category" class="form-select rounded-3">
+                            <option value="">-- ไม่เปลี่ยนแปลง --</option>
+                            <option value="อาหารจานหลัก">🍲 อาหารจานหลัก</option>
+                            <option value="ยำ / ของว่างทานเล่น">🥗 ยำ / ของว่างทานเล่น</option>
+                            <option value="ชาบู / สุกี้ / ปิ้งย่าง">🥩 ชาบู / สุกี้ / ปิ้งย่าง</option>
+                            <option value="เครื่องดื่ม">🥤 เครื่องดื่ม</option>
+                            <option value="ของหวาน">🍨 ของหวาน</option>
+                            <option value="เมนูแนะนำ / โปรโมชั่น">🌟 เมนูแนะนำ / โปรโมชั่น</option>
+                            <option value="อื่น ๆ">📦 อื่น ๆ</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">เปลี่ยนสถานะพร้อมขาย</label>
+                        <select name="status" class="form-select rounded-3">
+                            <option value="">-- ไม่เปลี่ยนแปลง --</option>
+                            <option value="available">🟢 พร้อมขาย</option>
+                            <option value="out_of_stock">🔴 สินค้าหมด (Out of Stock)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">ปรับราคา (ระบุราคาใหม่)</label>
+                        <input type="number" name="price" class="form-control rounded-3" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยนราคา" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 bg-light p-3">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 text-dark fw-bold">อัปเดตข้อมูลทั้งหมด</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Menu Modals (แต่ละรายการ) -->
 {% for menu in menus %}
 <div class="modal fade" id="editMenuModal{{ menu.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -385,10 +587,23 @@
         if (sortSelect) sortSelect.addEventListener('change', applyFilters);
         categoryRadios.forEach(radio => radio.addEventListener('change', applyFilters));
 
-        // เริ่มต้นสร้างช่องป้อนข้อมูลเมนูช่องแรก
         if (document.getElementById('multiMenuContainer')) {
             addMenuRow();
         }
+
+        // คลิกที่ตัวการ์ดเพื่อติ๊กเลือก/ยกเลิก Checkbox
+        document.querySelectorAll('.menu-card').forEach(card => {
+            card.addEventListener('click', function (e) {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.item-checkbox') || e.target.closest('select') || e.target.closest('input')) {
+                    return;
+                }
+                const cb = this.querySelector('.item-checkbox');
+                if (cb) {
+                    cb.checked = !cb.checked;
+                    updateBulkActionToolbar();
+                }
+            });
+        });
     });
 
     function applyFilters() {
@@ -440,6 +655,8 @@
         } else {
             noResults.classList.add('d-none');
         }
+        
+        updateBulkActionToolbar();
     }
 
     function resetFilters() {
@@ -448,6 +665,172 @@
         document.getElementById('sortSelect').value = 'default';
         document.getElementById('f_cat_all').checked = true;
         applyFilters();
+    }
+
+    // ================= ระบบเลือกรายการกลุ่ม (Bulk / Batch Actions UX) =================
+    function getSelectedIds() {
+        const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function updateBulkActionToolbar() {
+        const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+        const count = selectedCheckboxes.length;
+        const toolbar = document.getElementById('bulkActionToolbar');
+        const badge = document.getElementById('selectedCountBadge');
+        const batchCountSpan = document.getElementById('batchEditItemCount');
+
+        document.querySelectorAll('.menu-item-col').forEach(col => {
+            const cb = col.querySelector('.item-checkbox');
+            const card = col.querySelector('.menu-card');
+            if (cb && cb.checked) {
+                card.classList.add('selected-card');
+            } else {
+                card.classList.remove('selected-card');
+            }
+        });
+
+        if (count > 0) {
+            toolbar.classList.remove('d-none');
+            badge.textContent = `เลือกอยู่ ${count} รายการ`;
+            if (batchCountSpan) batchCountSpan.textContent = count;
+        } else {
+            toolbar.classList.add('d-none');
+        }
+
+        const visibleCheckboxes = document.querySelectorAll('.menu-item-col:not(.d-none) .item-checkbox');
+        const selectAllCb = document.getElementById('selectAllCheckbox');
+        if (visibleCheckboxes.length > 0 && Array.from(visibleCheckboxes).every(cb => cb.checked)) {
+            selectAllCb.checked = true;
+            selectAllCb.indeterminate = false;
+        } else if (count > 0) {
+            selectAllCb.checked = false;
+            selectAllCb.indeterminate = true;
+        } else {
+            selectAllCb.checked = false;
+            selectAllCb.indeterminate = false;
+        }
+    }
+
+    function toggleSelectAll(isChecked) {
+        const visibleCheckboxes = document.querySelectorAll('.menu-item-col:not(.d-none) .item-checkbox');
+        visibleCheckboxes.forEach(cb => {
+            cb.checked = isChecked;
+        });
+        updateBulkActionToolbar();
+    }
+
+    function deselectAll() {
+        document.querySelectorAll('.item-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        updateBulkActionToolbar();
+    }
+
+    // ส่งคำขอลบหลายรายการพร้อมกัน (Batch Delete)
+    function submitBatchDelete() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        Swal.fire({
+            title: `ยืนยันการลบ ${ids.length} รายการ?`,
+            text: 'คุณต้องการลบรายการเมนูที่เลือกทั้งหมดใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: `ใช่, ลบทั้ง ${ids.length} รายการ!`,
+            cancelButtonText: 'ยกเลิก',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'กำลังลบข้อมูล...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                fetch("{{ url_for('admin_menu_batch_delete') if 'admin_menu_batch_delete' in config.get('ENDPOINTS', {}) else '/admin/menu/batch-delete' }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ ids: ids })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            title: 'ลบสำเร็จ!',
+                            text: data.message || `ลบรายการเรียบร้อยแล้ว ${ids.length} รายการ`,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => location.reload());
+                    } else {
+                        Swal.fire('เกิดข้อผิดพลาด!', data.message || 'ไม่สามารถลบรายการได้', 'error');
+                    }
+                })
+                .catch(err => {
+                    Swal.fire('เกิดข้อผิดพลาด!', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+                });
+            }
+        });
+    }
+
+    // ส่งคำขอแก้ไขหลายรายการพร้อมกัน (Batch Edit)
+    function submitBatchEdit(event) {
+        event.preventDefault();
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        const form = document.getElementById('batchEditForm');
+        const category = form.category.value;
+        const status = form.status.value;
+        const price = form.price.value;
+
+        if (!category && !status && !price) {
+            Swal.fire('แจ้งเตือน', 'กรุณาเลือกหรือระบุอย่างน้อย 1 หัวข้อที่ต้องการแก้ไข', 'info');
+            return;
+        }
+
+        Swal.fire({
+            title: 'กำลังอัปเดตข้อมูล...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        fetch("{{ url_for('admin_menu_batch_edit') if 'admin_menu_batch_edit' in config.get('ENDPOINTS', {}) else '/admin/menu/batch-edit' }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                ids: ids,
+                category: category || null,
+                status: status || null,
+                price: price !== "" ? parseFloat(price) : null
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                Swal.fire({
+                    title: 'แก้ไขสำเร็จ!',
+                    text: data.message || 'อัปเดตรายการที่เลือกเรียบร้อยแล้ว',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => location.reload());
+            } else {
+                Swal.fire('เกิดข้อผิดพลาด!', data.message || 'ไม่สามารถอัปเดตข้อมูลได้', 'error');
+            }
+        })
+        .catch(err => {
+            Swal.fire('เกิดข้อผิดพลาด!', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+        });
     }
 
     // ================= ระบบเพิ่มเมนูหลายรายการ (Multi-Add JS) =================
@@ -471,7 +854,6 @@
             </div>
             
             <div class="row g-2">
-                <!-- เลือกหมวดหมู่ -->
                 <div class="col-12 col-md-4">
                     <label class="form-label small fw-bold text-secondary mb-1">หมวดหมู่</label>
                     <select name="category" class="form-select form-select-sm rounded-3 fw-semibold text-dark" required>
@@ -485,13 +867,11 @@
                     </select>
                 </div>
 
-                <!-- ชื่อรายการอาหาร -->
                 <div class="col-12 col-md-5">
                     <label class="form-label small fw-bold text-secondary mb-1">ชื่อรายการอาหาร</label>
                     <input type="text" name="name" class="form-control form-control-sm rounded-3" placeholder="เช่น ยำวุ้นเส้น" required>
                 </div>
 
-                <!-- ราคา -->
                 <div class="col-12 col-md-3">
                     <label class="form-label small fw-bold text-secondary mb-1">ราคา (บาท)</label>
                     <div class="input-group input-group-sm">
@@ -500,10 +880,9 @@
                     </div>
                 </div>
 
-                <!-- อัปโหลดรูปภาพ -->
                 <div class="col-12 mt-2">
-                    <label class="form-label small fw-bold text-secondary mb-1">รูปภาพอาหาร</label>
-                    <input type="file" name="image" class="form-control form-control-sm rounded-3" accept="image/*" required>
+                    <label class="form-label small fw-bold text-secondary mb-1">รูปภาพอาหาร (ถ้ามี)</label>
+                    <input type="file" name="image" class="form-control form-control-sm rounded-3" accept="image/*">
                 </div>
             </div>
         </div>
@@ -535,7 +914,6 @@
         document.getElementById('menuCountBadge').textContent = rows.length;
     }
 
-    // ฟังก์ชันส่งข้อมูลการเพิ่มเมนูแบบวนลูป
     async function submitMultiMenu(event) {
         event.preventDefault();
 
@@ -579,10 +957,15 @@
             try {
                 const response = await fetch("{{ url_for('admin_menu_add') }}", {
                     method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     body: formData
                 });
 
-                if (response.ok) {
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok && data.status === 'success') {
                     successCount++;
                 } else {
                     failCount++;
@@ -617,7 +1000,7 @@
         }
     }
 
-    // ================= ระบบลบรายการเมนู =================
+    // ================= ระบบลบรายการเมนูทีละรายการ =================
     function deleteItem(url) {
         Swal.fire({
             title: 'ยืนยันการลบ?',
