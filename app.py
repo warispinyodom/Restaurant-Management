@@ -1025,7 +1025,11 @@ def admin_sales_history():
     raw_orders = get_firebase_data('orders')
     orders = parse_firebase_data(raw_orders)
     orders.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-    return render_template('admin/sales.html', orders=orders)
+    
+    # ส่งวันที่ปัจจุบันไปให้ Jinja2 แสดงผลบนเล่มรายงาน
+    now_date = datetime.now().strftime("%d/%m/%Y %H:%M")
+    
+    return render_template('admin/sales.html', orders=orders, now_date=now_date)
 
 @app.route('/admin/sales/void/<id>', methods=['POST'])
 @admin_required

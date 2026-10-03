@@ -1,202 +1,383 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Custom CSS สำหรับจัดสไตล์ธีมสมุดรายงานและการรองรับ Responsive -->
 <style>
-    /* ธีมสมุดรายงาน (Ledger Style) */
-    .ledger-card {
-        background: #ffffff;
-        border: 1px solid #e9ecef;
+    /* ===================================================
+       1. ธีมเล่มรายงานสมุดบัญชี (Sales Ledger Theme)
+       =================================================== */
+    .ledger-container {
+        background-color: #f8f9fa;
         border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .ledger-paper {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-top: 4px solid #2b3a4a;
+        /* สันปกเล่มรายงาน */
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        position: relative;
     }
 
     .ledger-header {
-        background: linear-gradient(to right, #fafbfc, #f1f3f5);
-        border-bottom: 1px solid #e9ecef;
+        background: linear-gradient(180deg, #fcfcfc 0%, #f4f6f8 100%);
+        border-bottom: 2px solid #e9ecef;
     }
 
-    /* ป้องกันตัวอักษรแตก/ตัดคำบิดเบี้ยวในตาราง */
-    .table-ledger th,
-    .table-ledger td {
+    /* ตารางสไตล์เล่มรายงาน */
+    .table-ledger th {
+        background-color: #f1f3f5;
+        color: #343a40;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #dee2e6;
         white-space: nowrap;
         vertical-align: middle;
     }
 
-    .table-ledger th {
-        font-weight: 600;
-        color: #495057;
-        background-color: #f8f9fa;
-        letter-spacing: 0.3px;
-        font-size: 0.875rem;
+    .table-ledger td {
+        white-space: nowrap;
+        vertical-align: middle;
+        font-size: 0.9rem;
     }
 
-    /* สไตล์การ์ดสรุปยอด */
+    /* ===================================================
+       สไตล์การ์ดสรุปยอดแบบใหม่ (Modern Summary Cards)
+       =================================================== */
+    .summary-card {
+        background: #ffffff;
+        border: 1px solid #eef2f6;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        transition: all 0.25s ease-in-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* เอฟเฟกต์ Hover เมื่อเมาส์ชี้ */
+    .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    /* แถบสีเน้นด้านข้างการ์ด (Left Accent Bar) */
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+    }
+
+    .summary-card.sales::before { background-color: #198754; }      /* สีเขียว */
+    .summary-card.completed::before { background-color: #0d6efd; }  /* สีฟ้า */
+    .summary-card.voided::before { background-color: #dc3545; }     /* สีแดง */
+
+    /* ไอคอนการ์ด */
     .summary-icon {
         width: 48px;
         height: 48px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 10px;
+        font-size: 1.25rem;
+        flex-shrink: 0;
     }
 
-    /* ปรับแต่งสำหรับการพิมพ์รายงาน (Print View) */
+    /* หัวข้อการ์ด */
+    .summary-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        letter-spacing: 0.2px;
+    }
+
+    /* ตัวเลขสรุปยอด */
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #212529;
+        line-height: 1.2;
+    }
+
+    /* หน่วยนับ */
+    .summary-unit {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6c757d;
+        margin-left: 4px;
+    }
+
+    /* ปุ่มลัดเลือกช่วงเวลา */
+    .btn-quick-date {
+        font-size: 0.78rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 20px;
+    }
+
+    /* ส่วนเซ็นชื่อเมื่อพิมพ์รายงาน */
+    .print-signature-block {
+        display: none;
+    }
+
+    /* ===================================================
+       2. Responsive adjustments (มือถือ & แท็บเล็ต)
+       =================================================== */
+    @media (max-width: 767.98px) {
+        .filter-box {
+            padding: 0.75rem !important;
+        }
+
+        .summary-value {
+            font-size: 1.25rem !important;
+        }
+
+        .table-ledger th,
+        .table-ledger td {
+            padding: 0.6rem 0.5rem;
+            font-size: 0.82rem;
+        }
+    }
+
+    /* ===================================================
+       3. Print Stylesheet (ปรับแต่งสำหรับพิมพ์เอกสาร A4)
+       =================================================== */
     @media print {
-        .no-print {
+
+        .no-print,
+        .no-print * {
             display: none !important;
         }
+
         body {
-            background: #fff !important;
+            background: #ffffff !important;
+            color: #000000 !important;
             padding: 0 !important;
         }
-        .ledger-card {
+
+        .ledger-paper {
             border: none !important;
             box-shadow: none !important;
+            border-top: none !important;
         }
+
         .table-responsive {
             overflow: visible !important;
         }
-    }
 
-    /* ปรับแต่งสำหรับหน้าจอแสดงผลขนาดเล็ก (Mobile Screen) */
-    @media (max-width: 575.98px) {
-        .summary-card-title {
-            font-size: 0.8rem;
-        }
-        .summary-card-value {
-            font-size: 1.25rem !important;
-        }
-        .table-ledger th, 
+        .table-ledger th,
         .table-ledger td {
-            font-size: 0.85rem;
-            padding: 0.6rem 0.5rem;
+            border-color: #333 !important;
+            padding: 6px 8px !important;
+        }
+
+        .print-signature-block {
+            display: flex !important;
+            margin-top: 40px;
+            page-break-inside: avoid;
         }
     }
 </style>
 
-<div class="container-fluid px-0">
+<div class="container-fluid px-0 ledger-container">
 
-    <!-- 1. Header และปุ่มควบคุม -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <!-- 1. ส่วนหัวเล่มรายงาน (Report Header) -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 px-1">
         <div>
             <h4 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
-                <i class="fas fa-book-bookmark text-primary"></i>
-                ประวัติการขาย (Sales Ledger)
+                <i class="fas fa-book-journal-whills text-primary"></i>
+                รายงานประวัติการขาย (Sales Ledger)
             </h4>
-            <p class="text-muted small mb-0">รายงานสรุปรายการสั่งซื้อ รายรับ และจัดการการยกเลิกบิล</p>
+            <p class="text-muted small mb-0">
+                เล่มบันทึกรายการสั่งซื้อ สรุปรายรับ และตรวจสอบการยกเลิกบิล
+            </p>
         </div>
         <div class="d-flex align-items-center gap-2 no-print">
-            <button onclick="window.print()" class="btn btn-outline-dark btn-sm rounded-3 shadow-sm px-3 d-inline-flex align-items-center gap-2">
+            <button onclick="window.print()"
+                class="btn btn-dark btn-sm rounded-2 shadow-sm px-3 d-inline-flex align-items-center gap-2">
                 <i class="fas fa-print"></i>
-                <span>พิมพ์รายงาน</span>
+                <span>พิมพ์รายงาน (Print)</span>
             </button>
         </div>
     </div>
 
-    <!-- 2. สรุปตัวเลขสำคัญ (Summary Cards) -->
+    <!-- 2. แผงควบคุมตัวกรองค้นหา (Advanced Filter Panel) -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 no-print filter-box bg-white">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-secondary small d-flex align-items-center gap-1">
+                    <i class="fas fa-filter text-primary"></i> ตัวกรองข้อมูลรายงาน (Report Filters)
+                </span>
+                <!-- ปุ่มลัดช่วงเวลา -->
+                <div class="d-flex gap-1 flex-wrap">
+                    <button type="button" class="btn btn-outline-secondary btn-quick-date"
+                        onclick="setQuickDate('today')">วันนี้</button>
+                    <button type="button" class="btn btn-outline-secondary btn-quick-date"
+                        onclick="setQuickDate('7days')">7 วันล่าสุด</button>
+                    <button type="button" class="btn btn-outline-secondary btn-quick-date"
+                        onclick="setQuickDate('month')">เดือนนี้</button>
+                    <button type="button" class="btn btn-outline-danger btn-quick-date" onclick="resetFilters()">
+                        <i class="fas fa-rotate-left me-1"></i>รีเซ็ต
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-2 align-items-end">
+                <!-- ค้นหาคำด่วน -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small mb-1">ค้นหาด่วน (Search)</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light text-muted"><i class="fas fa-search"></i></span>
+                        <input type="text" id="filterKeyword" class="form-control"
+                            placeholder="รหัสออเดอร์, โต๊ะ, ยอดเงิน..." onkeyup="applyLedgerFilters()">
+                    </div>
+                </div>
+
+                <!-- วันที่เริ่มต้น -->
+                <div class="col-6 col-md-2">
+                    <label class="form-label text-muted small mb-1">ตั้งแต่วันที่</label>
+                    <input type="date" id="filterStartDate" class="form-control form-control-sm"
+                        onchange="applyLedgerFilters()">
+                </div>
+
+                <!-- วันที่สิ้นสุด -->
+                <div class="col-6 col-md-2">
+                    <label class="form-label text-muted small mb-1">ถึงวันที่</label>
+                    <input type="date" id="filterEndDate" class="form-control form-control-sm"
+                        onchange="applyLedgerFilters()">
+                </div>
+
+                <!-- ตัวกรองสถานะ -->
+                <div class="col-6 col-md-2">
+                    <label class="form-label text-muted small mb-1">สถานะบิล</label>
+                    <select id="filterStatus" class="form-select form-select-sm" onchange="applyLedgerFilters()">
+                        <option value="all">-- ทุกสถานะ --</option>
+                        <option value="completed">สำเร็จ (Completed)</option>
+                        <option value="voided">ยกเลิกแล้ว (Voided)</option>
+                        <option value="pending">รอดำเนินการ (Pending)</option>
+                    </select>
+                </div>
+
+                <!-- ช่องทางชำระเงิน -->
+                <div class="col-6 col-md-3">
+                    <label class="form-label text-muted small mb-1">ช่องทางชำระเงิน</label>
+                    <select id="filterPayment" class="form-select form-select-sm" onchange="applyLedgerFilters()">
+                        <option value="all">-- ทุกช่องทางชำระ --</option>
+                        <option value="เงินสด">เงินสด</option>
+                        <option value="PromptPay">PromptPay / โอนเงิน</option>
+                        <option value="บัตรเครดิต">บัตรเครดิต</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. การ์ดสรุปยอดคำนวณเรียลไทม์ (Dynamic Summary Cards) -->
     <div class="row g-3 mb-4">
-        {% set total_sales = namespace(value=0) %}
-        {% set completed_count = namespace(value=0) %}
-        {% set voided_count = namespace(value=0) %}
-
-        {% for order in orders %}
-            {% if order['status'] == 'completed' %}
-                {% set total_sales.value = total_sales.value + (order['total_amount'] or 0) %}
-                {% set completed_count.value = completed_count.value + 1 %}
-            {% elif order['status'] == 'voided' or order['status'] == 'cancelled' %}
-                {% set voided_count.value = voided_count.value + 1 %}
-            {% endif %}
-        {% endfor %}
-
         <!-- ยอดขายรวม -->
-        <div class="col-12 col-sm-4">
-            <div class="ledger-card p-3">
+        <div class="col-12 col-md-4">
+            <div class="summary-card sales p-3 h-100">
                 <div class="d-flex align-items-center">
                     <div class="summary-icon bg-success bg-opacity-10 text-success me-3">
-                        <i class="fas fa-wallet fs-4"></i>
+                        <i class="fas fa-wallet"></i>
                     </div>
-                    <div>
-                        <div class="text-muted summary-card-title fw-medium">ยอดขายรวมสำเร็จ</div>
-                        <div class="fs-4 fw-bold text-dark summary-card-value">฿{{ "{:,.2f}".format(total_sales.value) }}</div>
+                    <div class="flex-grow-1">
+                        <div class="summary-title mb-1">ยอดขายรวมสำเร็จ</div>
+                        <div class="summary-value" id="statTotalSales">฿0.00</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- รายการขายสำเร็จ -->
-        <div class="col-6 col-sm-4">
-            <div class="ledger-card p-3">
+        <div class="col-12 col-sm-6 col-md-4">
+            <div class="summary-card completed p-3 h-100">
                 <div class="d-flex align-items-center">
                     <div class="summary-icon bg-primary bg-opacity-10 text-primary me-3">
-                        <i class="fas fa-check-circle fs-4"></i>
+                        <i class="fas fa-check-circle"></i>
                     </div>
-                    <div>
-                        <div class="text-muted summary-card-title fw-medium">รายการสำเร็จ</div>
-                        <div class="fs-4 fw-bold text-dark summary-card-value">{{ completed_count.value }} <span class="fs-6 text-muted fw-normal">บิล</span></div>
+                    <div class="flex-grow-1">
+                        <div class="summary-title mb-1">รายการสำเร็จ</div>
+                        <div class="summary-value">
+                            <span id="statCompletedCount">0</span>
+                            <span class="summary-unit">บิล</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- รายการยกเลิก (Void) -->
-        <div class="col-6 col-sm-4">
-            <div class="ledger-card p-3">
+        <!-- รายการยกเลิก -->
+        <div class="col-12 col-sm-6 col-md-4">
+            <div class="summary-card voided p-3 h-100">
                 <div class="d-flex align-items-center">
                     <div class="summary-icon bg-danger bg-opacity-10 text-danger me-3">
-                        <i class="fas fa-ban fs-4"></i>
+                        <i class="fas fa-ban"></i>
                     </div>
-                    <div>
-                        <div class="text-muted summary-card-title fw-medium">ยกเลิก (Void)</div>
-                        <div class="fs-4 fw-bold text-dark summary-card-value">{{ voided_count.value }} <span class="fs-6 text-muted fw-normal">บิล</span></div>
+                    <div class="flex-grow-1">
+                        <div class="summary-title mb-1">รายการยกเลิก (Void)</div>
+                        <div class="summary-value">
+                            <span id="statVoidedCount">0</span>
+                            <span class="summary-unit">บิล</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 3. ตารางสมุดรายงานประวัติการขาย -->
-    <div class="ledger-card overflow-hidden">
-        
-        <!-- ToolBar สรุปและช่องค้นหา (Responsive) -->
+    <!-- 4. ตารางประวัติการขายสไตล์สมุดรายงาน (Sales Ledger Table) -->
+    <div class="ledger-paper overflow-hidden mb-4">
+
+        <!-- Header ตารางรายงาน -->
         <div class="ledger-header p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h6 class="fw-bold m-0 text-dark d-flex align-items-center gap-2">
-                <i class="fas fa-list-check text-secondary"></i>
-                รายการสั่งซื้อทั้งหมด ({{ orders|length }} รายการ)
-            </h6>
-            
-            <!-- ช่องค้นหาแบบรวดเร็ว (Quick Filter) -->
-            <div class="no-print w-100-mobile" style="max-width: 260px;">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white border-end-0 text-muted">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <input type="text" id="salesSearch" class="form-control border-start-0 ps-0" placeholder="ค้นหารหัส, โต๊ะ, ชำระเงิน..." onkeyup="filterSalesTable()">
-                </div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-list text-secondary"></i>
+                <h6 class="fw-bold m-0 text-dark">รายการบันทึกการขาย</h6>
+                <span class="badge bg-secondary rounded-pill font-monospace" id="visibleRowCount">0 รายการ</span>
+            </div>
+            <div class="text-muted small">
+                <i class="far fa-clock me-1"></i>ข้อมูล ณ วันที่: {{ now_date if now_date else '' }}
             </div>
         </div>
 
+        <!-- Body ตาราง -->
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover table-ledger align-middle mb-0" id="salesTable">
+                <table class="table table-hover table-ledger align-middle mb-0" id="salesLedgerTable">
                     <thead>
                         <tr>
                             <th class="ps-3 py-3" style="min-width: 110px;">รหัสออเดอร์</th>
                             <th style="min-width: 140px;">จำนวนลูกค้า / โต๊ะ</th>
                             <th style="min-width: 120px;">ยอดรวม</th>
-                            <th style="min-width: 140px;">ช่องทางชำระ</th>
+                            <th style="min-width: 150px;">ช่องทางชำระ</th>
                             <th style="min-width: 130px;">สถานะ</th>
                             <th style="min-width: 160px;">วันที่-เวลา</th>
-                            <th class="text-end pe-3 no-print" style="min-width: 120px;">จัดการ</th>
+                            <th class="text-end pe-3 no-print" style="min-width: 110px;">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if orders %}
                         {% for order in orders %}
-                        <tr id="order-row-{{ order['id'] }}">
+                        {% set order_status = order['status'] or 'pending' %}
+                        {% set order_amount = order['total_amount'] or 0 %}
+                        {% set order_payment = order['payment_method'] or 'เงินสด/PromptPay' %}
+                        {% set order_date_raw = order['created_at'] or '' %}
+                        {% set order_date_day = order_date_raw.split(' ')[0] if order_date_raw else '' %}
+
+                        <tr id="order-row-{{ order['id'] }}" class="ledger-row" data-id="{{ order['id'] }}"
+                            data-status="{{ order_status }}" data-amount="{{ order_amount }}"
+                            data-payment="{{ order_payment }}" data-date="{{ order_date_day }}"
+                            data-search="#{{ order['id'] }} โต๊ะ {{ order['table_no'] or '-' }} {{ order_payment }} {{ order_status }}">
+
                             <!-- รหัสออเดอร์ -->
-                            <td class="ps-3 fw-bold text-primary">#{{ order['id'] }}</td>
-                            
+                            <td class="ps-3 fw-bold text-primary font-monospace">#{{ order['id'] }}</td>
+
                             <!-- โต๊ะ/จำนวนคน -->
                             <td>
                                 <span class="fw-medium text-dark">
@@ -206,44 +387,48 @@
                             </td>
 
                             <!-- ยอดรวม -->
-                            <td class="fw-bold text-dark">
-                                ฿{{ "{:,.2f}".format(order['total_amount'] or 0) }}
+                            <td class="fw-bold text-dark font-monospace">
+                                ฿{{ "{:,.2f}".format(order_amount) }}
                             </td>
 
                             <!-- ช่องทางชำระเงิน -->
                             <td>
-                                <span class="badge bg-light text-dark border px-2 py-1.5 fw-normal">
-                                    <i class="fas fa-credit-card me-1 text-muted"></i>{{ order['payment_method'] or 'เงินสด/PromptPay' }}
+                                <span class="badge bg-light text-dark border px-2 py-1 fw-normal">
+                                    <i class="fas fa-credit-card me-1 text-muted"></i>{{ order_payment }}
                                 </span>
                             </td>
 
                             <!-- สถานะ -->
                             <td>
-                                {% if order['status'] == 'completed' %}
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+                                {% if order_status == 'completed' %}
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
                                     <i class="fas fa-check me-1"></i>สำเร็จ
                                 </span>
-                                {% elif order['status'] == 'voided' or order['status'] == 'cancelled' %}
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1">
+                                {% elif order_status == 'voided' or order_status == 'cancelled' %}
+                                <span
+                                    class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1">
                                     <i class="fas fa-times me-1"></i>ยกเลิกแล้ว (Void)
                                 </span>
                                 {% else %}
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
-                                    <i class="fas fa-clock me-1"></i>{{ order['status'] or 'รอดำเนินการ' }}
+                                <span
+                                    class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
+                                    <i class="fas fa-clock me-1"></i>{{ order_status }}
                                 </span>
                                 {% endif %}
                             </td>
 
                             <!-- วันที่และเวลา -->
-                            <td class="text-muted small">
-                                <i class="far fa-calendar-alt me-1"></i>{{ order['created_at'] or '-' }}
+                            <td class="text-muted small font-monospace">
+                                <i class="far fa-calendar-alt me-1"></i>{{ order_date_raw or '-' }}
                             </td>
 
-                            <!-- ปุ่มจัดการ (ไม่แสดงเวลาพิมพ์) -->
+                            <!-- ปุ่มจัดการ -->
                             <td class="text-end pe-3 no-print">
-                                {% if order['status'] != 'voided' and order['status'] != 'cancelled' %}
-                                <button class="btn btn-outline-danger btn-sm rounded-2 px-2 py-1" data-id="{{ order.id }}"
-                                    onclick="voidOrder(this.getAttribute('data-id'))" title="ยกเลิกบิลนี้">
+                                {% if order_status != 'voided' and order_status != 'cancelled' %}
+                                <button class="btn btn-outline-danger btn-sm rounded-2 px-2 py-1"
+                                    data-id="{{ order.id }}" onclick="voidOrder(this.getAttribute('data-id'))"
+                                    title="ยกเลิกบิลนี้">
                                     <i class="fas fa-ban me-1"></i>ยกเลิก
                                 </button>
                                 {% else %}
@@ -253,16 +438,38 @@
                         </tr>
                         {% endfor %}
                         {% else %}
-                        <tr>
+                        <tr id="noDataRow">
                             <td colspan="7" class="text-center py-5 text-muted">
                                 <i class="fas fa-inbox fs-1 mb-2 d-block opacity-25"></i>
                                 ยังไม่มีประวัติการขายในระบบ
                             </td>
                         </tr>
                         {% endif %}
+
+                        <!-- แถวแจ้งเมื่อค้นหาไม่เจอ -->
+                        <tr id="noMatchingRow" style="display: none;">
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-search-minus fs-1 mb-2 d-block opacity-25"></i>
+                                ไม่พบข้อมูลรายการขายตามเงื่อนไขที่กรอง
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- 5. ส่วนท้ายเล่มรายงานสำหรับพิมพ์ลงกระดาษ (Print Signature Area) -->
+    <div class="print-signature-block justify-content-between px-4">
+        <div class="text-center" style="width: 200px;">
+            <div class="mb-2" style="border-bottom: 1px solid #000; height: 40px;"></div>
+            <p class="mb-0 small fw-bold">ลงชื่อ....................................................</p>
+            <p class="text-muted small">( ผู้จัดทำรายงาน / Report Issuer )</p>
+        </div>
+        <div class="text-center" style="width: 200px;">
+            <div class="mb-2" style="border-bottom: 1px solid #000; height: 40px;"></div>
+            <p class="mb-0 small fw-bold">ลงชื่อ....................................................</p>
+            <p class="text-muted small">( ผู้ตรวจสอบ / Auditor )</p>
         </div>
     </div>
 
@@ -271,7 +478,129 @@
 
 {% block scripts %}
 <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // คำนวณยอดครั้งแรกเมื่อโหลดหน้า
+        applyLedgerFilters();
+    });
+
+    // ==========================================
+    // ฟังก์ชันกรองข้อมูลรายงานและคำนวณยอดเรียลไทม์
+    // ==========================================
+    function applyLedgerFilters() {
+        const keyword = document.getElementById("filterKeyword").value.toLowerCase().trim();
+        const startDate = document.getElementById("filterStartDate").value;
+        const endDate = document.getElementById("filterEndDate").value;
+        const status = document.getElementById("filterStatus").value;
+        const payment = document.getElementById("filterPayment").value;
+
+        const rows = document.querySelectorAll(".ledger-row");
+        let visibleCount = 0;
+        let totalSalesSum = 0;
+        let completedCount = 0;
+        let voidedCount = 0;
+
+        rows.forEach(row => {
+            const rowSearch = row.getAttribute("data-search").toLowerCase();
+            const rowStatus = row.getAttribute("data-status");
+            const rowAmount = parseFloat(row.getAttribute("data-amount")) || 0;
+            const rowPayment = row.getAttribute("data-payment");
+            const rowDate = row.getAttribute("data-date"); // YYYY-MM-DD
+
+            // 1. ตรวจสอบการค้นหาคีย์เวิร์ด
+            const matchKeyword = !keyword || rowSearch.includes(keyword);
+
+            // 2. ตรวจสอบช่วงวันที่
+            let matchDate = true;
+            if (startDate && rowDate && rowDate < startDate) matchDate = false;
+            if (endDate && rowDate && rowDate > endDate) matchDate = false;
+
+            // 3. ตรวจสอบสถานะ
+            let matchStatus = true;
+            if (status !== "all" && rowStatus !== status) {
+                if (status === "voided" && (rowStatus === "voided" || rowStatus === "cancelled")) {
+                    matchStatus = true;
+                } else {
+                    matchStatus = false;
+                }
+            }
+
+            // 4. ตรวจสอบช่องทางชำระเงิน
+            let matchPayment = true;
+            if (payment !== "all") {
+                matchPayment = rowPayment.toLowerCase().includes(payment.toLowerCase());
+            }
+
+            // สรุปผลการกรอง
+            if (matchKeyword && matchDate && matchStatus && matchPayment) {
+                row.style.display = "";
+                visibleCount++;
+
+                // คำนวณสรุปยอดเรียลไทม์เฉพาะรายการที่แสดง
+                if (rowStatus === "completed") {
+                    totalSalesSum += rowAmount;
+                    completedCount++;
+                } else if (rowStatus === "voided" || rowStatus === "cancelled") {
+                    voidedCount++;
+                }
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        // อัปเดตตัวเลขการ์ดสรุปยอด
+        document.getElementById("statTotalSales").textContent = "฿" + totalSalesSum.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById("statCompletedCount").textContent = completedCount;
+        document.getElementById("statVoidedCount").textContent = voidedCount;
+        document.getElementById("visibleRowCount").textContent = visibleCount + " รายการ";
+
+        // ควบคุมแถวแจ้งไม่พบข้อมูล
+        const noMatchingRow = document.getElementById("noMatchingRow");
+        if (noMatchingRow) {
+            noMatchingRow.style.display = (visibleCount === 0 && rows.length > 0) ? "" : "none";
+        }
+    }
+
+    // ==========================================
+    // ฟังก์ชันตั้งค่าปุ่มลัดวันที่
+    // ==========================================
+    function setQuickDate(type) {
+        const startDateInput = document.getElementById("filterStartDate");
+        const endDateInput = document.getElementById("filterEndDate");
+
+        const today = new Date();
+        const formatDate = (d) => d.toISOString().split('T')[0];
+
+        endDateInput.value = formatDate(today);
+
+        if (type === 'today') {
+            startDateInput.value = formatDate(today);
+        } else if (type === '7days') {
+            const past7 = new Date();
+            past7.setDate(today.getDate() - 6);
+            startDateInput.value = formatDate(past7);
+        } else if (type === 'month') {
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            startDateInput.value = formatDate(firstDay);
+        }
+
+        applyLedgerFilters();
+    }
+
+    // ==========================================
+    // ฟังก์ชันรีเซ็ตตัวกรองทั้งหมด
+    // ==========================================
+    function resetFilters() {
+        document.getElementById("filterKeyword").value = "";
+        document.getElementById("filterStartDate").value = "";
+        document.getElementById("filterEndDate").value = "";
+        document.getElementById("filterStatus").value = "all";
+        document.getElementById("filterPayment").value = "all";
+        applyLedgerFilters();
+    }
+
+    // ==========================================
     // ฟังก์ชันยกเลิกบิล (Void Order)
+    // ==========================================
     function voidOrder(orderId) {
         if (confirm(`คุณต้องการยกเลิกรายการสั่งซื้อ #${orderId} ใช่หรือไม่?`)) {
             fetch(`/admin/sales/void/${orderId}`, {
@@ -280,36 +609,19 @@
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('เกิดข้อผิดพลาด: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
-            });
-        }
-    }
-
-    // ฟังก์ชันค้นหาข้อมูลในตารางแบบเรียลไทม์ (Live Search)
-    function filterSalesTable() {
-        const input = document.getElementById("salesSearch");
-        const filter = input.value.toLowerCase();
-        const table = document.getElementById("salesTable");
-        const trs = table.getElementsByTagName("tr");
-
-        for (let i = 1; i < trs.length; i++) {
-            let rowText = trs[i].textContent.toLowerCase();
-            if (rowText.includes(filter)) {
-                trs[i].style.display = "";
-            } else {
-                trs[i].style.display = "none";
-            }
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                });
         }
     }
 </script>
