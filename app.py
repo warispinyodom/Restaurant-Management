@@ -626,7 +626,7 @@ def admin_menu_batch_edit():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # ==========================================
-# ADMIN: STAFF MANAGEMENT
+# ADMIN: STAFF MANAGEMENT (BATCH SUPPORT)
 # ==========================================
 @app.route('/admin/staff')
 @admin_required
@@ -640,6 +640,128 @@ def admin_staff_list():
                 staff_members.append(user)
             
     return render_template('admin/staff.html', staff_members=staff_members)
+
+@app.route('/admin/staff/batch-add', methods=['POST'])
+@admin_required
+def admin_staff_batch_add():
+    """เพิ่มพนักงานทีละหลายคนพร้อมกัน"""
+    try:
+        data = request.get_json() or {}
+        users_list = data.get('users', [])
+        if not users_list:
+            return jsonify({'status': 'error', 'message': 'กรุณาระบุข้อมูลพนักงานที่ต้องการเพิ่ม'}), 400
+
+        all_existing_users = get_all_users()
+        if not isinstance(all_existing_users, dict):
+            all_existing_users = {}
+
+        existing_usernames = {
+            info.get('username') for info in all_existing_users.values() if isinstance(info, dict)
+        }
+
+        created_count = 0
+        errors = []
+
+        for idx, u in enumerate(users_list, 1):
+            username = u.get('username', '').strip()
+            password = u.get('password', '').strip()
+            role = u.get('role', 'staff')
+
+            if not username or not password:
+                errors.append(f"แถวที่ {idx}: กรุณากรอกชื่อผู้ใช้และรหัสผ่านให้ครบถ้วน")
+                continue
+
+            if len(username) < 3 or len(password) < 4:
+                errors.append(f"แถวที่ {idx} ({username}): ชื่อผู้ใช้ต้องยาว >= 3 และรหัสผ่าน >= 4 ตัวอักษร")
+                continue
+
+            if username in existing_usernames:
+                errors.append(f"แถวที่ {idx} ({username}): มีชื่อผู้ใช้นี้ในระบบแล้ว")
+                continue
+
+            hashed_pw = generate_password_hash(password)
+            if create_user(username, hashed_pw, role):
+                existing_usernames.add(username)
+                created_count += 1
+            else:
+                errors.append(f"แถวที่ {idx} ({username}): เกิดข้อผิดพลาดในการบันทึก")
+
+        if created_count > 0:
+            msg = f"เพิ่มพนักงานสำเร็จ {created_count} รายการ"
+            if errors:
+                msg += f" (มีข้อผิดพลาดบางรายการ)"
+            return jsonify({'status': 'success', 'message': msg, 'errors': errors})
+        else:
+            return jsonify({'status': 'error', 'message': "ไม่สามารถเพิ่มพนักงานได้", 'errors': errors}), 400
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/admin/staff/batch-edit', methods=['POST'])
+@admin_required
+def admin_staff_batch_edit():
+    """แก้ไขตำแหน่งหรือสถานะพนักงานหลายคนพร้อมกัน"""
+    try:
+        data = request.get_json() or {}
+        ids = data.get('ids', [])
+        role = data.get('role')
+        status_val = data.get('is_active')
+
+        if not ids:
+            return jsonify({'status': 'error', 'message': 'ไม่พบรายการที่เลือก'}), 400
+
+        payload = {}
+        if role in ['staff', 'admin']:
+            payload['role'] = role
+        if status_val is not None:
+            payload['is_active'] = True if str(status_val).lower() in ['true', '1', 'on'] else False
+
+        if not payload:
+            return jsonify({'status': 'error', 'message': 'ไม่มีข้อมูลที่ต้องอัปเดต'}), 400
+
+        updated_count = 0
+        for user_id in ids:
+            target_user = get_firebase_data(f"users/{user_id}")
+            # ป้องกันการระงับสิทธิ์แอดมินโดยไม่ตั้งใจ
+            if isinstance(target_user, dict) and target_user.get('role') == 'admin' and payload.get('is_active') is False:
+                continue
+            if patch_firebase_data('users', user_id, payload):
+                updated_count += 1
+
+        return jsonify({'status': 'success', 'message': f'อัปเดตข้อมูลพนักงานเรียบร้อย {updated_count} รายการ'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/admin/staff/batch-delete', methods=['POST'])
+@admin_required
+def admin_staff_batch_delete():
+    """ลบพนักงานหลายคนพร้อมกัน"""
+    try:
+        data = request.get_json() or {}
+        ids = data.get('ids', [])
+        if not ids:
+            return jsonify({'status': 'error', 'message': 'ไม่พบรายการที่ต้องการลบ'}), 400
+
+        deleted_count = 0
+        skipped_count = 0
+
+        for user_id in ids:
+            target_user = get_firebase_data(f"users/{user_id}")
+            # ป้องกันการลบบัญชีแอดมิน
+            if isinstance(target_user, dict) and target_user.get('role') == 'admin':
+                skipped_count += 1
+                continue
+            
+            if delete_firebase_data('users', user_id):
+                deleted_count += 1
+
+        msg = f"ลบพนักงานสำเร็จ {deleted_count} รายการ"
+        if skipped_count > 0:
+            msg += f" (ยกเว้นบัญชีแอดมิน {skipped_count} รายการที่ไม่สามารถลบได้)"
+
+        return jsonify({'status': 'success', 'message': msg})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/admin/staff/add', methods=['POST'])
 @admin_required
@@ -712,6 +834,10 @@ def admin_staff_edit(user_id):
 @admin_required
 def admin_staff_delete(id):
     try:
+        target_user = get_firebase_data(f"users/{id}")
+        if isinstance(target_user, dict) and target_user.get('role') == 'admin':
+            return jsonify({'status': 'error', 'message': 'ไม่สามารถลบบัญชีแอดมินได้'}), 400
+
         if delete_firebase_data('users', id):
             return jsonify({'status': 'success', 'message': 'ลบพนักงานเรียบร้อยแล้ว'})
         return jsonify({'status': 'error', 'message': 'เกิดข้อผิดพลาดในการลบ'}), 500

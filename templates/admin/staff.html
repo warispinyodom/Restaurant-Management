@@ -1,111 +1,517 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+<style>
+    :root {
+        --ledger-bg: #faf7f2;
+        --ledger-paper: #ffffff;
+        --ledger-border: #e6dcce;
+        --ledger-primary: #5c3a21;
+        --ledger-primary-hover: #432814;
+        --ledger-gold: #c59b27;
+        --ledger-gold-light: #fbf7ed;
+        --ledger-text: #2c221e;
+        --ledger-muted: #7a6e65;
+        --ledger-line: #f1ebd9;
+    }
+
+    body {
+        background-color: var(--ledger-bg);
+        color: var(--ledger-text);
+    }
+
+    /* Ledger Book Container Header */
+    .ledger-header {
+        background: linear-gradient(135deg, #3d2314 0%, #5c3a21 100%);
+        color: #fceecb;
+        border-radius: 16px;
+        padding: 1.5rem 2rem;
+        box-shadow: 0 8px 20px rgba(61, 35, 20, 0.15);
+        border-bottom: 4px solid var(--ledger-gold);
+    }
+
+    /* Card Styling */
+    .ledger-card {
+        background: var(--ledger-paper);
+        border: 1px solid var(--ledger-border);
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Inputs & Selects Alignment */
+    .ledger-input, .ledger-select {
+        border: 1px solid var(--ledger-border);
+        border-radius: 8px;
+        padding: 0.6rem 0.9rem;
+        background-color: #fdfbf7;
+        color: var(--ledger-text);
+        font-size: 0.925rem;
+        height: 44px;
+    }
+
+    .ledger-input:focus, .ledger-select:focus {
+        border-color: var(--ledger-gold);
+        box-shadow: 0 0 0 0.2rem rgba(197, 155, 39, 0.2);
+        background-color: #fff;
+    }
+
+    .input-group-text-ledger {
+        background-color: #fdfbf7;
+        border: 1px solid var(--ledger-border);
+        border-right: none;
+        color: var(--ledger-muted);
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+
+    /* Batch Bar */
+    .batch-bar {
+        background: #fff9ed;
+        border: 1px solid #ebd9b0;
+        border-radius: 12px;
+        display: none;
+        transition: all 0.3s ease;
+    }
+    .batch-bar.active {
+        display: flex;
+    }
+
+    /* Custom Checkbox */
+    .form-check-input {
+        cursor: pointer;
+        width: 1.25em;
+        height: 1.25em;
+        border-color: #c8beaf;
+    }
+    .form-check-input:checked {
+        background-color: var(--ledger-gold);
+        border-color: var(--ledger-gold);
+    }
+
+    /* Guestbook Ruled Table */
+    .ledger-table-container {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--ledger-border);
+        background: var(--ledger-paper);
+    }
+
+    .ledger-table {
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .ledger-table thead th {
+        background-color: #f5eee6;
+        color: var(--ledger-primary);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.825rem;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        border-bottom: 2px solid var(--ledger-border);
+        white-space: nowrap;
+    }
+
+    .ledger-table tbody tr {
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid var(--ledger-line);
+    }
+
+    .ledger-table tbody tr:hover {
+        background-color: var(--ledger-gold-light);
+    }
+
+    .ledger-table td {
+        padding: 0.9rem 1rem;
+        vertical-align: middle;
+        font-size: 0.95rem;
+    }
+
+    /* Badges */
+    .badge-admin {
+        background-color: #3d2314;
+        color: #fceecb;
+        border: 1px solid var(--ledger-gold);
+    }
+
+    .badge-staff {
+        background-color: #f2e9dc;
+        color: #5c3a21;
+        border: 1px solid #d8ca99;
+    }
+
+    .badge-active {
+        background-color: #eaf5ea;
+        color: #1e7e34;
+        border: 1px solid #b7e1b7;
+    }
+
+    .badge-suspended {
+        background-color: #fde8e8;
+        color: #bd2130;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Buttons */
+    .btn-ledger-gold {
+        background-color: var(--ledger-gold);
+        color: #ffffff;
+        font-weight: 600;
+        border: none;
+    }
+    .btn-ledger-gold:hover {
+        background-color: #a8821d;
+        color: #ffffff;
+    }
+
+    .btn-ledger-primary {
+        background-color: var(--ledger-primary);
+        color: #fceecb;
+        font-weight: 600;
+        border: none;
+    }
+    .btn-ledger-primary:hover {
+        background-color: var(--ledger-primary-hover);
+        color: #ffffff;
+    }
+
+    /* Dynamic Form Rows in Modal */
+    .dynamic-staff-row {
+        background: #faf6f0;
+        border-radius: 10px;
+        padding: 16px;
+        border: 1px solid #e8dec8;
+    }
+
+    /* Responsive Improvements for Mobile */
+    @media (max-width: 768px) {
+        .ledger-header {
+            padding: 1.25rem;
+            text-align: center;
+        }
+        
+        .ledger-header button {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .filter-btn-container {
+            margin-top: 0.25rem;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px !important;
+            justify-content: flex-end;
+        }
+
+        .action-btns .btn {
+            padding: 0.35rem 0.6rem;
+            font-size: 0.825rem;
+        }
+
+        .table-responsive {
+            border: 0;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .ledger-table th, .ledger-table td {
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .user-avatar-box {
+            display: none !important;
+        }
+    }
+</style>
+
+<!-- Ledger Title & Top Action Header -->
+<div class="ledger-header d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
-        <h3 class="fw-bold mb-1">จัดการพนักงาน</h3>
-        <p class="text-muted mb-0 small">จัดการสิทธิ์บัญชีผู้ใช้และรหัสผ่านของพนักงานในระบบ</p>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="fas fa-book-open"></i> สมุดรายชื่อพนักงาน
+        </h3>
+        <p class="mb-0 opacity-75 small">สมุดบันทึกบัญชีผู้ใช้งาน สิทธิ์การเข้าถึง และสถิติพนักงานในร้าน</p>
     </div>
-    <button class="btn btn-primary shadow-sm px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#addStaffModal">
-        <i class="fas fa-user-plus me-1"></i> เพิ่มพนักงาน
+    <button class="btn btn-ledger-gold shadow-sm px-4 py-2 rounded-pill d-inline-flex align-items-center gap-2" 
+            data-bs-toggle="modal" data-bs-target="#addBatchStaffModal">
+        <i class="fas fa-user-plus"></i> เพิ่มพนักงานใหม่ (หลายคน)
     </button>
 </div>
 
-<div class="card table-card border-0 shadow-sm rounded-3 overflow-hidden">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4">ชื่อผู้ใช้</th>
-                        <th class="text-center">ตำแหน่ง</th>
-                        <th class="text-center">สถานะ</th>
-                        <th class="text-end pe-4" style="width: 180px;">จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if staff_members %}
-                        {% for user in staff_members %}
-                        <tr>
-                            <!-- ชื่อผู้ใช้งาน -->
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px;">
-                                        👤
-                                    </div>
-                                    <span class="fw-bold text-dark">{{ user.username }}</span>
-                                </div>
-                            </td>
-
-                            <!-- ตำแหน่ง -->
-                            <td class="text-center">
-                                {% if user.role == 'admin' %}
-                                    <span class="badge bg-dark text-white rounded-pill px-3 py-2 fw-semibold">🛡️ แอดมิน</span>
-                                {% else %}
-                                    <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle rounded-pill px-3 py-2 fw-semibold">👤 พนักงานทั่วไป</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- สถานะ -->
-                            <td class="text-center">
-                                {% if user.role == 'admin' or user.is_active == true or user.is_active == 'true' or user.is_active is undefined %}
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-3 py-2 fw-semibold">ใช้งานอยู่</span>
-                                {% else %}
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill px-3 py-2 fw-semibold">ระงับ</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- จัดการ -->
-                            <td class="text-end pe-4">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <button type="button" 
-                                            class="btn btn-warning btn-sm text-white fw-bold px-3 rounded-2 shadow-sm"
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#editStaffModal{{ user.id }}">
-                                        ✏️ แก้ไข
-                                    </button>
-                                    
-                                    {% if user.role != 'admin' %}
-                                    <button type="button" 
-                                            class="btn btn-danger btn-sm fw-bold px-3 rounded-2 shadow-sm"
-                                            onclick="deleteStaff('{{ user.id }}', '{{ user.role }}', '{{ user.username }}')">
-                                        🗑️ ลบ
-                                    </button>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center py-4 text-muted">ไม่พบข้อมูลพนักงาน</td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
+<!-- Search & Filter Bar -->
+<div class="card ledger-card mb-4">
+    <div class="card-body p-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text input-group-text-ledger"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control ledger-input border-start-0" 
+                           placeholder="ค้นหาชื่อผู้ใช้งาน..." onkeyup="filterStaffTable()">
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <select id="roleFilter" class="form-select ledger-select" onchange="filterStaffTable()">
+                    <option value="">-- ตำแหน่งทั้งหมด --</option>
+                    <option value="admin">แอดมิน (Admin)</option>
+                    <option value="staff">พนักงานทั่วไป (Staff)</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <select id="statusFilter" class="form-select ledger-select" onchange="filterStaffTable()">
+                    <option value="">-- สถานะทั้งหมด --</option>
+                    <option value="active">ใช้งานอยู่</option>
+                    <option value="suspended">ระงับ</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-1 filter-btn-container">
+                <button class="btn btn-outline-secondary ledger-input w-100 d-flex align-items-center justify-content-center" 
+                        onclick="resetFilters()" title="ล้างการกรอง">
+                    <i class="fas fa-redo-alt me-md-0 me-1"></i> <span class="d-md-none small">รีเซ็ต</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Staff Modals -->
+<!-- Batch Operation Toolbar -->
+<div id="batchBar" class="batch-bar p-3 mb-3 align-items-center justify-content-between flex-wrap gap-2 shadow-sm">
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-warning text-dark rounded-pill fs-6 px-3 py-2 fw-bold" id="selectedCount">เลือกแล้ว 0 รายการ</span>
+        <span class="text-muted small fw-bold d-none d-sm-inline">การจัดการแบบกลุ่ม:</span>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-warning text-dark fw-bold btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#batchEditModal">
+            <i class="fas fa-edit"></i> แก้ไขที่เลือก
+        </button>
+        <button type="button" class="btn btn-danger fw-bold btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1" onclick="confirmBatchDelete()">
+            <i class="fas fa-trash-alt"></i> ลบที่เลือก
+        </button>
+    </div>
+</div>
+
+<!-- Ledger Staff List Table -->
+<div class="ledger-table-container shadow-sm mb-4">
+    <div class="table-responsive">
+        <table class="table ledger-table align-middle" id="staffTable">
+            <thead>
+                <tr>
+                    <th class="ps-3 text-center" style="width: 48px;">
+                        <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th>รายละเอียดพนักงาน</th>
+                    <th class="text-center">ตำแหน่ง</th>
+                    <th class="text-center">สถานะ</th>
+                    <th class="text-end pe-4" style="min-width: 140px;">จัดการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if staff_members %}
+                    {% for user in staff_members %}
+                    <tr class="staff-row" 
+                        data-username="{{ user.username | lower }}" 
+                        data-role="{{ user.role }}" 
+                        data-status="{% if user.role == 'admin' or user.is_active == true or user.is_active == 'true' or user.is_active is undefined %}active{% else %}suspended{% endif %}">
+                        
+                        <td class="ps-3 text-center">
+                            <input class="form-check-input staff-checkbox" type="checkbox" value="{{ user.id }}" data-role="{{ user.role }}" onchange="updateBatchBar()">
+                        </td>
+
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="user-avatar-box rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" 
+                                     style="width: 40px; height: 40px; min-width: 40px; background-color: #f0e6d8; color: #5c3a21; border: 1px solid #dcd1be;">
+                                    <i class="fas fa-user-circle fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark fs-6">{{ user.username }}</div>
+                                    <div class="text-muted extra-small d-md-none">ID: #{{ user.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="text-center">
+                            {% if user.role == 'admin' %}
+                                <span class="badge badge-admin rounded-pill px-3 py-2 fw-semibold">
+                                    <i class="fas fa-user-shield me-1"></i> แอดมิน
+                                </span>
+                            {% else %}
+                                <span class="badge badge-staff rounded-pill px-3 py-2 fw-semibold">
+                                    <i class="fas fa-user-tie me-1"></i> พนักงาน
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-center">
+                            {% if user.role == 'admin' or user.is_active == true or user.is_active == 'true' or user.is_active is undefined %}
+                                <span class="badge badge-active rounded-pill px-3 py-2 fw-semibold">
+                                    <i class="fas fa-check-circle me-1"></i> ใช้งานอยู่
+                                </span>
+                            {% else %}
+                                <span class="badge badge-suspended rounded-pill px-3 py-2 fw-semibold">
+                                    <i class="fas fa-minus-circle me-1"></i> ระงับ
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2 action-btns">
+                                <button type="button" 
+                                        class="btn btn-outline-warning btn-sm fw-bold px-3 rounded-2"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editStaffModal{{ user.id }}"
+                                        title="แก้ไขข้อมูล">
+                                    <i class="fas fa-pen"></i> <span class="d-none d-sm-inline ms-1">แก้ไข</span>
+                                </button>
+                                
+                                {% if user.role != 'admin' %}
+                                <button type="button" 
+                                        class="btn btn-outline-danger btn-sm fw-bold px-3 rounded-2"
+                                        onclick="deleteStaff('{{ user.id }}', '{{ user.role }}', '{{ user.username }}')"
+                                        title="ลบพนักงาน">
+                                    <i class="fas fa-trash-alt"></i> <span class="d-none d-sm-inline ms-1">ลบ</span>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr id="noDataRow">
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fas fa-folder-open fs-2 mb-2 d-block opacity-50"></i>
+                            ไม่พบข้อมูลพนักงานในระบบ
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: เพิ่มพนักงานหลายคนพร้อมกัน (Batch Add) -->
+<div class="modal fade" id="addBatchStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg style-modal">
+            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="fas fa-user-plus text-warning"></i> ลงทะเบียนพนักงานใหม่ (เพิ่มหลายรายการ)
+                    </h5>
+                    <p class="text-muted small mb-0">กรอกข้อมูลพนักงานที่ต้องการบันทึกลงในสมุดรายชื่อ สามารถกดปุ่ม + เพื่อเพิ่มแถวได้</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="batchAddForm">
+                    <div id="staffRowsContainer" class="d-flex flex-column gap-3">
+                        <!-- Default Row 1 -->
+                        <div class="dynamic-staff-row position-relative">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-bold">ชื่อผู้ใช้ (Username)</label>
+                                    <input type="text" class="form-control ledger-input staff-input-username" placeholder="เช่น staff01" required>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-bold">รหัสผ่าน</label>
+                                    <input type="password" class="form-control ledger-input staff-input-password" placeholder="อย่างน้อย 4 ตัวอักษร" required>
+                                </div>
+                                <div class="col-9 col-md-3">
+                                    <label class="form-label small fw-bold">ตำแหน่ง</label>
+                                    <select class="form-select ledger-select staff-input-role">
+                                        <option value="staff">พนักงานทั่วไป</option>
+                                        <option value="admin">แอดมิน</option>
+                                    </select>
+                                </div>
+                                <div class="col-3 col-md-1 text-end">
+                                    <button type="button" class="btn btn-outline-danger w-100 ledger-input d-flex align-items-center justify-content-center" 
+                                            onclick="removeStaffRow(this)" title="ลบแถว">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm fw-bold rounded-pill px-3" onclick="addStaffRow()">
+                        <i class="fas fa-plus me-1"></i> เพิ่มแถวพนักงาน
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-ledger-primary rounded-pill px-4" onclick="submitBatchAdd()">บันทึกพนักงานทั้งหมด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: แก้ไขแบบกลุ่ม (Batch Edit) -->
+<div class="modal fade" id="batchEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="fas fa-edit text-warning"></i> แก้ไขรายการที่เลือก
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small">เลือกฟิลด์ที่ต้องการเปลี่ยนให้รายการที่เลือกทั้งหมด (หากไม่ต้องการเปลี่ยนฟิลด์ไหนให้เว้นไว้)</p>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">ตำแหน่งใหม่</label>
+                    <select id="batchRoleInput" class="form-select ledger-select">
+                        <option value="">-- ไม่เปลี่ยนแปลง --</option>
+                        <option value="staff">พนักงานทั่วไป</option>
+                        <option value="admin">แอดมิน</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">สถานะใหม่</label>
+                    <select id="batchStatusInput" class="form-select ledger-select">
+                        <option value="">-- ไม่เปลี่ยนแปลง --</option>
+                        <option value="true">ใช้งานอยู่ (Active)</option>
+                        <option value="false">ระงับการใช้งาน (Suspended)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-ledger-gold rounded-pill px-4" onclick="submitBatchEdit()">บันทึกการแก้ไข</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Edit Staff Modals -->
 {% for staff in staff_members %}
 <div class="modal fade" id="editStaffModal{{ staff.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <form action="{{ url_for('admin_staff_edit', user_id=staff.id) }}" method="POST" class="modal-content border-0 shadow">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">แก้ไขข้อมูล: {{ staff.username }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <form action="{{ url_for('admin_staff_edit', user_id=staff.id) }}" method="POST" class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="fas fa-user-edit text-warning"></i> แก้ไขข้อมูล: {{ staff.username }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body py-3">
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">ชื่อผู้ใช้งาน</label>
+                    <input type="text" name="username" class="form-control ledger-input" value="{{ staff.username }}" required>
+                </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">ตำแหน่ง</label>
-                    <select name="role" class="form-select">
+                    <select name="role" class="form-select ledger-select">
                         <option value="staff" {% if staff.role == 'staff' %}selected{% endif %}>พนักงานทั่วไป</option>
                         <option value="admin" {% if staff.role == 'admin' %}selected{% endif %}>แอดมิน</option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">สถานะการใช้งาน</label>
-                    <select name="is_active" class="form-select">
+                    <select name="is_active" class="form-select ledger-select">
                         <option value="true" {% if staff.is_active == true or staff.is_active == 'true' or staff.is_active is undefined %}selected{% endif %}>
                             ใช้งานอยู่ (Active)
                         </option>
@@ -116,79 +522,320 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">รหัสผ่านใหม่</label>
-                    <input type="password" name="password" class="form-control"
-                        placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
+                    <input type="password" name="password" class="form-control ledger-input" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
-                <button type="submit" class="btn btn-success px-4">บันทึก</button>
+            <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="submit" class="btn btn-ledger-primary rounded-pill px-4">บันทึกข้อมูล</button>
             </div>
         </form>
     </div>
 </div>
 {% endfor %}
 
-<!-- Add Staff Modal -->
-<div class="modal fade" id="addStaffModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <form action="{{ url_for('admin_staff_add') }}" method="POST" class="modal-content border-0 shadow">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">เพิ่มพนักงานใหม่</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body py-3">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">ชื่อผู้ใช้งาน (Username)</label>
-                    <input type="text" name="username" class="form-control" placeholder="เช่น staff01" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">รหัสผ่าน</label>
-                    <input type="password" name="password" class="form-control" placeholder="กรอกรหัสผ่าน" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">ตำแหน่ง</label>
-                    <select name="role" class="form-select">
-                        <option value="staff">พนักงานทั่วไป</option>
-                        <option value="admin">แอดมิน</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
-                <button type="submit" class="btn btn-primary px-4">เพิ่มพนักงาน</button>
-            </div>
-        </form>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    function deleteStaff(userId, role, username) {
-        if (role === 'admin') {
-            showNotification('error', 'ไม่สามารถดำเนินการได้', 'ไม่สามารถลบบัญชีผู้ดูแลระบบ (Admin) ได้');
+    // 1. ระบบค้นหาและกรองข้อมูลแบบ Real-time
+    function filterStaffTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase().trim();
+        const role = document.getElementById('roleFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        
+        const rows = document.querySelectorAll('.staff-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const rowUsername = row.getAttribute('data-username') || '';
+            const rowRole = row.getAttribute('data-role') || '';
+            const rowStatus = row.getAttribute('data-status') || '';
+
+            const matchSearch = rowUsername.includes(search);
+            const matchRole = role === '' || rowRole === role;
+            const matchStatus = status === '' || rowStatus === status;
+
+            if (matchSearch && matchRole && matchStatus) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('roleFilter').value = '';
+        document.getElementById('statusFilter').value = '';
+        filterStaffTable();
+    }
+
+    // 2. ระบบเลือกหลายรายการ (Batch Select)
+    function toggleSelectAll(master) {
+        const checkboxes = document.querySelectorAll('.staff-checkbox');
+        checkboxes.forEach(cb => {
+            const row = cb.closest('tr');
+            if (row.style.display !== 'none') {
+                cb.checked = master.checked;
+            }
+        });
+        updateBatchBar();
+    }
+
+    function getSelectedIds() {
+        const selected = [];
+        document.querySelectorAll('.staff-checkbox:checked').forEach(cb => {
+            selected.push(cb.value);
+        });
+        return selected;
+    }
+
+    function updateBatchBar() {
+        const selected = getSelectedIds();
+        const batchBar = document.getElementById('batchBar');
+        const countSpan = document.getElementById('selectedCount');
+        
+        if (selected.length > 0) {
+            batchBar.classList.add('active');
+            countSpan.textContent = `เลือกแล้ว ${selected.length} รายการ`;
+        } else {
+            batchBar.classList.remove('active');
+            const selectAllCb = document.getElementById('selectAll');
+            if(selectAllCb) selectAllCb.checked = false;
+        }
+    }
+
+    // 3. เพิ่มพนักงานหลายคนแบบไดนามิก (Batch Add UI)
+    function addStaffRow() {
+        const container = document.getElementById('staffRowsContainer');
+        const div = document.createElement('div');
+        div.className = 'dynamic-staff-row position-relative';
+        div.innerHTML = `
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" class="form-control ledger-input staff-input-username" placeholder="ชื่อผู้ใช้" required>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">รหัสผ่าน</label>
+                    <input type="password" class="form-control ledger-input staff-input-password" placeholder="อย่างน้อย 4 ตัวอักษร" required>
+                </div>
+                <div class="col-9 col-md-3">
+                    <label class="form-label small fw-bold">ตำแหน่ง</label>
+                    <select class="form-select ledger-select staff-input-role">
+                        <option value="staff">พนักงานทั่วไป</option>
+                        <option value="admin">แอดมิน</option>
+                    </select>
+                </div>
+                <div class="col-3 col-md-1 text-end">
+                    <button type="button" class="btn btn-outline-danger w-100 ledger-input d-flex align-items-center justify-content-center" 
+                            onclick="removeStaffRow(this)" title="ลบแถว">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    function removeStaffRow(btn) {
+        const container = document.getElementById('staffRowsContainer');
+        if (container.children.length > 1) {
+            btn.closest('.dynamic-staff-row').remove();
+        } else {
+            if(typeof showNotification === 'function') {
+                showNotification('error', 'ข้อผิดพลาด', 'ต้องมีข้อมูลพนักงานอย่างน้อย 1 รายการ');
+            } else {
+                alert('ต้องมีข้อมูลพนักงานอย่างน้อย 1 รายการ');
+            }
+        }
+    }
+
+    function submitBatchAdd() {
+        const rows = document.querySelectorAll('.dynamic-staff-row');
+        const users = [];
+
+        for (let i = 0; i < rows.length; i++) {
+            const username = rows[i].querySelector('.staff-input-username').value.trim();
+            const password = rows[i].querySelector('.staff-input-password').value.trim();
+            const role = rows[i].querySelector('.staff-input-role').value;
+
+            if (!username || !password) {
+                if(typeof showNotification === 'function') {
+                    showNotification('error', 'ข้อมูลไม่ครบถ้วน', `กรุณากรอกชื่อผู้ใช้และรหัสผ่านในแถวที่ ${i + 1}`);
+                } else {
+                    alert(`กรุณากรอกชื่อผู้ใช้และรหัสผ่านในแถวที่ ${i + 1}`);
+                }
+                return;
+            }
+
+            users.push({ username, password, role });
+        }
+
+        fetch('/admin/staff/batch-add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ users })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if(typeof showNotification === 'function') {
+                    showNotification('success', 'บันทึกสำเร็จ', data.message).then(() => location.reload());
+                } else {
+                    alert(data.message);
+                    location.reload();
+                }
+            } else {
+                if(typeof showNotification === 'function') {
+                    showNotification('error', 'เกิดข้อผิดพลาด', data.message);
+                } else {
+                    alert(data.message);
+                }
+            }
+        })
+        .catch(err => {
+            if(typeof showNotification === 'function') {
+                showNotification('error', 'เกิดข้อผิดพลาด', err.message);
+            } else {
+                alert(err.message);
+            }
+        });
+    }
+
+    // 4. บันทึกการแก้ไขแบบกลุ่ม (Batch Edit Submit)
+    function submitBatchEdit() {
+        const ids = getSelectedIds();
+        const role = document.getElementById('batchRoleInput').value;
+        const is_active = document.getElementById('batchStatusInput').value;
+
+        if (!role && !is_active) {
+            if(typeof showNotification === 'function') {
+                showNotification('error', 'แจ้งเตือน', 'กรุณาเลือกฟิลด์ที่ต้องการอัปเดต');
+            } else {
+                alert('กรุณาเลือกฟิลด์ที่ต้องการอัปเดต');
+            }
             return;
         }
 
-        confirmAction(
-            'ยืนยันการลบพนักงาน?',
-            `คุณแน่ใจหรือไม่ว่าต้องการลบพนักงาน "${username}" ออกจากระบบ?`,
-            function () {
-                fetch(`/admin/staff/delete/${userId}`, { method: 'POST' })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
+        fetch('/admin/staff/batch-edit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids, role: role || undefined, is_active: is_active || undefined })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if(typeof showNotification === 'function') {
+                    showNotification('success', 'สำเร็จ', data.message).then(() => location.reload());
+                } else {
+                    alert(data.message);
+                    location.reload();
+                }
+            } else {
+                if(typeof showNotification === 'function') {
+                    showNotification('error', 'เกิดข้อผิดพลาด', data.message);
+                } else {
+                    alert(data.message);
+                }
+            }
+        });
+    }
+
+    // 5. ลบพนักงานแบบกลุ่ม (Batch Delete Confirmation)
+    function confirmBatchDelete() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        const executeDelete = function() {
+            fetch('/admin/staff/batch-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if(typeof showNotification === 'function') {
+                        showNotification('success', 'ลบข้อมูลสำเร็จ', data.message).then(() => location.reload());
+                    } else {
+                        alert(data.message);
+                        location.reload();
+                    }
+                } else {
+                    if(typeof showNotification === 'function') {
+                        showNotification('error', 'เกิดข้อผิดพลาด', data.message);
+                    } else {
+                        alert(data.message);
+                    }
+                }
+            });
+        };
+
+        if (typeof confirmAction === 'function') {
+            confirmAction(
+                'ยืนยันการลบที่เลือก?',
+                `คุณแน่ใจหรือไม่ว่าต้องการลบพนักงานจำนวน ${ids.length} รายการออก?`,
+                executeDelete,
+                'warning',
+                'ลบข้อมูล',
+                'ยกเลิก'
+            );
+        } else {
+            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบพนักงานจำนวน ${ids.length} รายการออก?`)) {
+                executeDelete();
+            }
+        }
+    }
+
+    // 6. ลบพนักงานรายบุคคล
+    function deleteStaff(userId, role, username) {
+        if (role === 'admin') {
+            if(typeof showNotification === 'function') {
+                showNotification('error', 'ไม่สามารถดำเนินการได้', 'ไม่สามารถลบบัญชีผู้ดูแลระบบ (Admin) ได้');
+            } else {
+                alert('ไม่สามารถลบบัญชีผู้ดูแลระบบ (Admin) ได้');
+            }
+            return;
+        }
+
+        const executeDeleteOne = function() {
+            fetch(`/admin/staff/delete/${userId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        if(typeof showNotification === 'function') {
                             showNotification('success', 'ลบข้อมูลสำเร็จ', data.message).then(() => location.reload());
                         } else {
-                            showNotification('error', 'เกิดข้อผิดพลาด', data.message);
+                            alert(data.message);
+                            location.reload();
                         }
-                    });
-            },
-            'warning',
-            'ลบข้อมูล',
-            'ยกเลิก'
-        );
+                    } else {
+                        if(typeof showNotification === 'function') {
+                            showNotification('error', 'เกิดข้อผิดพลาด', data.message);
+                        } else {
+                            alert(data.message);
+                        }
+                    }
+                });
+        };
+
+        if (typeof confirmAction === 'function') {
+            confirmAction(
+                'ยืนยันการลบพนักงาน?',
+                `คุณแน่ใจหรือไม่ว่าต้องการลบพนักงาน "${username}" ออกจากระบบ?`,
+                executeDeleteOne,
+                'warning',
+                'ลบข้อมูล',
+                'ยกเลิก'
+            );
+        } else {
+            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบพนักงาน "${username}" ออกจากระบบ?`)) {
+                executeDeleteOne();
+            }
+        }
     }
 </script>
 {% endblock %}
