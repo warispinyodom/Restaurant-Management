@@ -1,271 +1,87 @@
 {
-  "categories": {
-    "cat_01": {
-      "display_order": 1,
-      "name": "อาหารจานหลัก"
-    },
-    "cat_02": {
-      "display_order": 2,
-      "name": "ยำ / ทานเล่น"
-    },
-    "cat_03": {
-      "display_order": 3,
-      "name": "เครื่องดื่ม"
-    }
-  },
   "menus": {
-    "menu_01": {
-      "category_id": "cat_01",
-      "image_url": "https://images.unsplash.com/photo-1612874742237-6526221588e3",
+    "-P3-znEpB71xT6mhxX2y": {
+      "category": "อาหารจารหลัก",
+      "image_file": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/menus%2Fmenus_20261003160124_a9b2d369.webp?alt=media",
       "is_available": true,
-      "name": "สปาเก็ตตี้คาโบนาร่า",
-      "price": 150,
-      "stock": 20
+      "name": "ยำทะเล",
+      "price": 50,
+      "status": "available"
     },
-    "menu_02": {
-      "category_id": "cat_02",
-      "image_url": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
+    "-P308RFqk1eQUNhJcdlf": {
+      "category": "อาหารจานหลัก",
+      "image_file": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/menus%2Fmenus_20261003164332_d89e4726.webp?alt=media",
       "is_available": true,
-      "name": "ยำวุ้นเส้นหมูสับ",
-      "price": 80,
-      "stock": 15
-    },
-    "menu_03": {
-      "category_id": "cat_03",
-      "image_url": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd",
-      "is_available": true,
-      "name": "ชาไทยเย็น",
-      "price": 45,
-      "stock": 50
+      "name": "ยำทะเลใต้",
+      "price": 70,
+      "size": "ปกติ",
+      "spice_level": "ไม่เผ็ด",
+      "status": "available"
     }
   },
   "orders": {
-    "-P2sPtNsHFuZAXVMUdgx": {
-      "created_at": "2026-10-02 00:03:15",
+    "-P31_tNOe3AVcgq5n-ga": {
+      "created_at": "2026-10-03 16:27:30",
       "customer_count": 1,
-      "table_no": "1",
       "items": [
         {
-          "id": "4",
-          "name": "ยำ",
+          "id": "-P3-znEpB71xT6mhxX2y",
+          "name": "ยำทะเล",
           "price": 50,
-          "quantity": 2
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "pending",
-      "total_amount": 100
-    },
-    "-P2sat0u-BgZcx4VTBvG": {
-      "created_at": "2026-10-02 00:55:39",
-      "customer_count": 2,
-      "table_no": "2",
-      "items": [
-        {
-          "id": "4",
-          "name": "ยำ",
-          "price": 50,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "pending",
-      "total_amount": 50
-    },
-    "-P2sayaUJ97Xtn-e8-HW": {
-      "created_at": "2026-10-02 00:56:02",
-      "customer_count": 1,
-      "table_no": "3",
-      "items": [
-        {
-          "id": "4",
-          "name": "ยำ",
-          "price": 50,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "pending",
-      "total_amount": 50
-    },
-    "-P2sueF1lGIT5SrIULkO": {
-      "created_at": "2026-10-01 19:22:01",
-      "customer_count": 1,
-      "table_no": "4",
-      "items": [
-        {
-          "id": "4",
-          "name": "ยำ",
-          "price": 55.5,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "pending",
-      "total_amount": 55.5
-    },
-    "-P2svDfAdWhYMp6BsXSP": {
-      "created_at": "2026-10-01 19:24:30",
-      "customer_count": 1,
-      "table_no": "5",
-      "items": [
-        {
-          "id": "4",
-          "name": "ยำ",
-          "price": 55.5,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "cooking",
-      "total_amount": 55.5
-    },
-    "-P2sz9TUMgwOErkwMM8A": {
-      "created_at": "2026-10-01 19:41:42",
-      "customer_count": 1,
-      "table_no": "6",
-      "items": [
-        {
-          "id": "4",
-          "name": "ยำ",
-          "price": 55.5,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "ready",
-      "total_amount": 55.5
-    },
-    "-P2t4GfOCQlY1YHra7VS": {
-      "created_at": "2026-10-01 20:08:24",
-      "customer_count": 1,
-      "table_no": "7",
-      "items": [
-        {
-          "id": "-P2t3nt7ShG4N4u7Vcpe",
-          "name": "ยำ",
-          "price": 50,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "pending",
-      "total_amount": 50
-    },
-    "-P2t4ojn2wur3_z5F9B2": {
-      "created_at": "2026-10-01 20:10:48",
-      "customer_count": 1,
-      "table_no": "8",
-      "items": [
-        {
-          "id": "-P2t3nt7ShG4N4u7Vcpe",
-          "name": "ยำ",
-          "price": 55,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "pending",
-      "total_amount": 55
-    },
-    "-P2w0kv_IKWpUa0QF8CW": {
-      "created_at": "2026-10-02 09:51:55",
-      "customer_count": 1,
-      "table_no": "9",
-      "items": [
-        {
-          "id": "-P2t3nt7ShG4N4u7Vcpe",
-          "name": "ยำ",
-          "price": 50,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "pending",
-      "total_amount": 50
-    },
-    "-P2wNj2Er3GgkEfVKb6n": {
-      "created_at": "2026-10-02 11:32:17",
-      "customer_count": 1,
-      "table_no": "10",
-      "items": [
-        {
-          "id": "-P2wKhdEIkJ-o7xaNi7M",
-          "name": "ยำ",
-          "price": 50,
-          "qty": 1
-        }
-      ],
-      "payment_method": "เงินสด",
-      "status": "pending",
-      "total_amount": 50
-    },
-    "ord_1001": {
-      "created_at": "2026-10-01 10:30:00",
-      "customer_count": 2,
-      "table_no": "11",
-      "items": [
-        {
-          "id": 1,
-          "name": "สปาเก็ตตี้คาโบนาร่า",
-          "price": 150,
-          "quantity": 2,
-          "size": "ปกติ",
-          "spice_level": "ไม่เผ็ด"
+          "qty": 4
         },
         {
-          "id": 3,
-          "name": "ชาไทยเย็น",
-          "price": 45,
-          "quantity": 2,
-          "size": "ปกติ",
-          "spice_level": "ไม่เผ็ด"
+          "id": "-P308RFqk1eQUNhJcdlf",
+          "name": "ยำทะเลใต้",
+          "price": 70,
+          "qty": 8
         }
       ],
-      "payment_method": "เงินสด",
-      "status": "completed",
-      "total_amount": 390
-    },
-    "ord_1002": {
-      "created_at": "2026-10-01 11:15:20",
-      "customer_count": 1,
-      "table_no": "12",
-      "items": [
-        {
-          "id": 2,
-          "name": "ยำวุ้นเส้นหมูสับ",
-          "price": 80,
-          "quantity": 1,
-          "size": "ปกติ",
-          "spice_level": "เผ็ดมาก"
-        }
-      ],
-      "payment_method": "โอนเงิน / QR Code",
+      "payment_method": "พร้อมเพย์ - นายสมพร ใจดี",
       "status": "pending",
-      "total_amount": 80
+      "table_no": "1",
+      "total_amount": 760
     }
   },
   "payment_channels": {
-    "-P2wXm9DnH1ZJOsdBB8X": {
-      "account_name": "นายสายสมอน ยองใย",
-      "bank_name": "กสิกร",
+    "-P30Mh8l_KgLwpnwgCbi": {
+      "account_name": "นายสมพร ใจดี",
+      "bank_name": "พร้อมเพย์",
       "is_active": 1,
-      "promptpay_no": "0911111343",
-      "qr_image": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/payments%2Fpayments_20261002121611_77393571.jpg?alt=media"
+      "promptpay_no": "0811818080",
+      "qr_image": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/payments%2Fpayments_20261003174551_5c5019ef.png?alt=media"
+    }
+  },
+  "tables": {
+    "1": {
+      "capacity": 4,
+      "current_order_id": "-P31_tNOe3AVcgq5n-ga",
+      "name": "โต๊ะ 1",
+      "status": "occupied"
     },
-    "-P2wbijoGicy7REkFl1O": {
-      "account_name": "Okok",
-      "bank_name": "พร้อมเย",
-      "is_active": 1,
-      "promptpay_no": "909",
-      "qr_image": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/payments%2Fpayments_20261002123748_e3b2a3f1.jpg?alt=media"
+    "2": {
+      "capacity": 4,
+      "current_order_id": null,
+      "name": "โต๊ะ 2",
+      "status": "available"
     },
-    "-P2whjq-E5gBqiUzBBO0": {
-      "account_name": "โซกู้ด",
-      "bank_name": "กสิกร",
-      "is_active": 1,
-      "promptpay_no": "0999999999",
-      "qr_image": "https://firebasestorage.googleapis.com/v0/b/webapplication-e7922.firebasestorage.app/o/payments%2Fpayments_20261002130405_0e42c9aa.jpg?alt=media"
+    "3": {
+      "capacity": 2,
+      "current_order_id": null,
+      "name": "โต๊ะ 3",
+      "status": "available"
+    },
+    "4": {
+      "capacity": 4,
+      "current_order_id": null,
+      "name": "โต๊ะ 4",
+      "status": "available"
+    },
+    "5": {
+      "capacity": 6,
+      "current_order_id": null,
+      "name": "โต๊ะ 5",
+      "status": "available"
     }
   },
   "users": {
@@ -298,6 +114,18 @@
       "password": "scrypt:32768:8:1$Nsvg7IpE5N6JCwxF$6ba95d9c9f0d8dd13f83bba7ef8988ee7ce5de9aa642e88d045671e53abbbc3b94e7dd00376f8bfe61427192837e47b0210180559c721334093e1cfe43d10306",
       "role": "customer",
       "username": "Soda"
+    },
+    "-P31_YW1vUfdPsVS6usI": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$I6OainJhau6fc48Y$205c365b785db1c4150444fd82f67f0a176d5562caf234e04ee1a571891d673a0ddaa1c7d5129b05dcdfab6bc880a79bef82fdb8495991d35817e5e77371f2f4",
+      "role": "customer",
+      "username": "dkfdfk"
+    },
+    "-P31_eFN1KgvByxs60Ed": {
+      "is_active": true,
+      "password": "scrypt:32768:8:1$MZwIqNDjLfD1BLND$7f7ce19710d47deb6edbbb8e3e28dec13343daf88c6351c109da36ae170f39c4edbe93d0c2b6324b50bdeda548ba55e24f326ed5b312a3fa2bb8958aa1481c22",
+      "role": "customer",
+      "username": "fuckyou"
     },
     "usr_admin01": {
       "is_active": true,

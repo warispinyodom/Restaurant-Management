@@ -146,7 +146,13 @@
                 
                 <div class="d-flex justify-content-between align-items-start my-2">
                     <div>
-                        <div class="fs-2 fw-bolder text-dark lh-1">โต๊ะ {{ order.table_no }}</div>
+                        <div class="fs-2 fw-bolder text-dark lh-1">
+                            {% if order.table_no and order.table_no != '-' and order.table_no != 'ไม่ระบุ' %}
+                                โต๊ะ {{ order.table_no }}
+                            {% else %}
+                                <span class="fs-5 text-secondary">ไม่ระบุโต๊ะ / กลับบ้าน</span>
+                            {% endif %}
+                        </div>
                         <div class="text-secondary small fw-bold mt-1">
                             NO: <span class="order-id-truncate align-bottom" title="#{{ order.id }}">#{{ order.id }}</span>
                         </div>

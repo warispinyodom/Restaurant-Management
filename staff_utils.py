@@ -29,6 +29,18 @@ def get_all_orders():
                         item = dict(order_info)
                         item['id'] = str(order_id)
                         
+                        # จัดการเลขโต๊ะ (ดึงคีย์ที่เป็นไปได้ทั้งหมด + ป้องกันค่าว่าง/เครื่องหมาย -)
+                        table_val = (
+                            item.get('table_no') or 
+                            item.get('table') or 
+                            item.get('table_number') or 
+                            item.get('tableNo')
+                        )
+                        if not table_val or str(table_val).strip() in ['-', '', 'None', 'null']:
+                            item['table_no'] = 'ไม่ระบุ'
+                        else:
+                            item['table_no'] = str(table_val).strip()
+                        
                         raw_items = item.get('items', [])
                         if isinstance(raw_items, dict):
                             items_list = list(raw_items.values())
@@ -116,11 +128,13 @@ def get_all_menus():
                         cat_name_from_db = categories.get(cat_id, {}).get('name') if isinstance(categories, dict) and cat_id in categories else None
                         item['category'] = cat_name_from_db or item.get('category', 'ทั่วไป')
                         
-                        # ป้องกัน UndefinedError สำหรับ stock และ price
+                        # ป้องกัน UndefinedError สำหรับ stock, price, discount
                         if 'stock' not in item:
                             item['stock'] = None
                         if 'price' not in item:
                             item['price'] = 0
+                        if 'discount' not in item:
+                            item['discount'] = 0
                         
                         if 'status' not in item:
                             is_avail = item.get('is_available', True)
@@ -154,6 +168,8 @@ def update_menu_item_db(menu_id, update_data):
     payload = {}
     if 'price' in update_data:
         payload['price'] = update_data['price']
+    if 'discount' in update_data:
+        payload['discount'] = update_data['discount']
     if 'stock' in update_data:
         payload['stock'] = update_data['stock']
     if 'status' in update_data:
@@ -174,4 +190,43 @@ def update_menu_item_db(menu_id, update_data):
             return response.status in [200, 201]
     except Exception as e:
         print(f"System Error (update_menu_item_db): {e}")
+        return False
+
+def bulk_update_menu_items_db(items_data):
+    """
+    อัปเดตข้อมูลแบบกลุ่มหลายรายการพร้อมกันใน Firebase
+    items_data: dict ในรูปแบบ { "menu_id_1": { "price": 50, ... }, "menu_id_2": { ... } }
+    """
+    if not items_data or not isinstance(items_data, dict):
+        return False
+
+    url = f"{FIREBASE_URL}/menus.json"
+    payload = {}
+
+    for menu_id, update_data in items_data.items():
+        if 'price' in update_data:
+            payload[f"{menu_id}/price"] = update_data['price']
+        if 'discount' in update_data:
+            payload[f"{menu_id}/discount"] = update_data['discount']
+        if 'stock' in update_data:
+            payload[f"{menu_id}/stock"] = update_data['stock']
+        if 'status' in update_data:
+            payload[f"{menu_id}/status"] = update_data['status']
+            payload[f"{menu_id}/is_available"] = (update_data['status'] == 'available')
+
+    if not payload:
+        return True
+
+    data = json.dumps(payload).encode('utf-8')
+    try:
+        req = urllib.request.Request(
+            url, 
+            data=data, 
+            headers={'Content-Type': 'application/json'}, 
+            method='PATCH'
+        )
+        with urllib.request.urlopen(req, context=ssl_context) as response:
+            return response.status in [200, 201]
+    except Exception as e:
+        print(f"System Error (bulk_update_menu_items_db): {e}")
         return False
